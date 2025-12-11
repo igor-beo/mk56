@@ -28,20 +28,20 @@ git clone https://github.com/scobi84/mk56.git
 cd mk56
 ```
 
-### 2. Build the C Assembler
+### 2. Build the Assembler
 
 ```bash
-cd asm/assembler-c
+cd assembler
 make
-cd ../..
+cd ..
 ```
 
 ### 3. Build the Emulator
 
 ```bash
-cd asm/emulator
+cd emulator
 make
-cd ../..
+cd ..
 ```
 
 ## Your First Program
@@ -60,7 +60,7 @@ Create `hello.asm`:
 ### 2. Assemble
 
 ```bash
-./asm/assembler-c/mk56asm hello.asm
+./assembler/mk56asm hello.asm
 ```
 
 This creates `hello.bin`.
@@ -69,7 +69,7 @@ This creates `hello.bin`.
 
 ```bash
 # Console mode with input value 5
-./asm/emulator/mk56emu hello.bin -c -i 5
+./emulator/mk56emu hello.bin -c -i 5
 ```
 
 Output: `X = 25.000000`
@@ -77,7 +77,7 @@ Output: `X = 25.000000`
 ### 4. Interactive Mode
 
 ```bash
-./asm/emulator/mk56emu hello.bin
+./emulator/mk56emu hello.bin
 ```
 
 This opens the ncurses TUI where you can:

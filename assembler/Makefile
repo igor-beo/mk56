@@ -23,10 +23,10 @@ clean:
 
 test: $(TARGET)
 	@echo "=== Testing sinh.asm ==="
-	./$(TARGET) ../examples/sinh.asm -v -l sinh_test.lst
+	./$(TARGET) ../asm/examples/sinh.asm -v -l sinh_test.lst
 	@echo ""
 	@echo "=== Testing factorial.asm ==="
-	./$(TARGET) ../examples/factorial.asm -v
+	./$(TARGET) ../asm/examples/factorial.asm -v
 	@echo ""
 	@echo "=== All tests passed ==="
 

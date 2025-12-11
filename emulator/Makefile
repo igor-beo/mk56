@@ -24,18 +24,18 @@ clean:
 # Test with sinh program
 test: $(TARGET)
 	@echo "=== Testing sinh(1) = 1.1752012 ==="
-	./$(TARGET) ../examples/sinh.bin -c -i 1
+	./$(TARGET) ../asm/examples/sinh.bin -c -i 1
 	@echo ""
 	@echo "=== Testing factorial(5) = 120 ==="
-	./$(TARGET) ../examples/factorial.bin -c -i 5
+	./$(TARGET) ../asm/examples/factorial.bin -c -i 5
 
 # Disassemble example
 disasm: $(TARGET)
-	./$(TARGET) ../examples/sinh.bin -d
+	./$(TARGET) ../asm/examples/sinh.bin -d
 
 # Run with TUI
 run: $(TARGET)
-	./$(TARGET) ../examples/sinh.bin
+	./$(TARGET) ../asm/examples/sinh.bin
 
 install: $(TARGET)
 	cp $(TARGET) /usr/local/bin/

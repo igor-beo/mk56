@@ -7,8 +7,8 @@
 *.lst
 
 # Compiled binaries (keep source, not outputs)
-asm/assembler-c/mk56asm
-asm/emulator/mk56emu
+assembler/mk56asm
+emulator/mk56emu
 
 # macOS
 .DS_Store

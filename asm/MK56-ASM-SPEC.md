@@ -303,33 +303,106 @@ For emulator implementation, each instruction maps to an opcode:
 
 ---
 
-## 9. Translation Reference
+## 9. Original Listing Syntax Translation
 
-### 9.1 Cyrillic to MK56-ASM
+This section provides a complete mapping from original Soviet calculator notation to MK56-ASM.
 
-| Original | MK56-ASM | Description |
-|----------|----------|-------------|
-| `ИП N` / `П→x N` | `RCL Rn` | Recall register |
-| `П N` / `x→П N` | `STO Rn` | Store to register |
-| `БП` | `JMP` | Unconditional jump |
-| `С/П` | `HALT` | Stop/run |
-| `В/О nn` | `CALL` | Call subroutine |
-| `В/О` | `RTN` | Return |
-| `x≥0` / `Fx≥0` | `JGE` | Jump if ≥ 0 |
-| `x<0` / `Fx<0` | `JLT` | Jump if < 0 |
-| `ВП` / `↑` | `ENTER` | Push to stack |
-| `↔` / `XY` | `SWAP` | Exchange X,Y |
-| `СХ` | `CLX` | Clear X |
-| `Feˣ` | `EXP` | Exponential |
-| `F1/x` | `INV` | Reciprocal |
-| `F√` / `√x` | `SQRT` | Square root |
-| `Fx²` / `x²` | `SQ` | Square |
-| `Fπ` | `PI` | Push π |
-| `Fsin` | `SIN` | Sine |
-| `Fcos` | `COS` | Cosine |
-| `Fln` | `LN` | Natural log |
-| `Flg` | `LOG` | Log base 10 |
-| `/−/` | `CHS` | Change sign |
+### 9.1 Complete Translation Table
+
+| Original (Cyrillic) | Original (Symbol) | MK56-ASM | Description |
+|---------------------|-------------------|----------|-------------|
+| **Stack Operations** ||||
+| `ВП` | `↑` | `ENTER` | Push X onto stack |
+| `↔` | `XY` | `SWAP` | Exchange X and Y |
+| `СХ` | `Сх` | `CLX` | Clear X register |
+| `↓` | | `ROLLDOWN` | Roll stack down |
+| `↑` | | `ROLLUP` | Roll stack up |
+| **Arithmetic** ||||
+| `+` | | `ADD` | Addition |
+| `−` | | `SUB` | Subtraction |
+| `×` | | `MUL` | Multiplication |
+| `÷` | `/` | `DIV` | Division |
+| `/−/` | `/-/` | `CHS` | Change sign (negate) |
+| **Math Functions** ||||
+| `Fx²` | `x²` | `SQ` | Square |
+| `F√` | `√x` | `SQRT` | Square root |
+| `F1/x` | `1/x` | `INV` | Reciprocal |
+| `Fxʸ` | `xʸ` | `POW` | Power (Y^X) |
+| `Feˣ` | `eˣ` | `EXP` | Exponential (e^X) |
+| `F10ˣ` | `10ˣ` | `EXP10` | Power of 10 |
+| `Fln` | `ln` | `LN` | Natural logarithm |
+| `Flg` | `lg` | `LOG` | Logarithm base 10 |
+| `Fsin` | `sin` | `SIN` | Sine (radians) |
+| `Fcos` | `cos` | `COS` | Cosine (radians) |
+| `Fπ` | `π` | `PI` | Push π constant |
+| **Memory Operations** ||||
+| `П N` | `x→П N` | `STO Rn` | Store X to register N |
+| `ИП N` | `П→x N` | `RCL Rn` | Recall register N to X |
+| `П+ N` | | `STO+ Rn` | Add X to register N |
+| `П− N` | | `STO- Rn` | Subtract X from register N |
+| **Flow Control** ||||
+| `БП nn` | | `JMP addr` | Unconditional jump |
+| `x≥0 nn` | `Fx≥0 nn` | `JGE addr` | Jump if X ≥ 0 |
+| `x<0 nn` | `Fx<0 nn` | `JLT addr` | Jump if X < 0 |
+| `В/О nn` | `ПП nn` | `CALL addr` | Call subroutine |
+| `В/О` | | `RTN` | Return from subroutine |
+| `С/П` | | `HALT` | Stop program |
+| `НОП` | | `NOP` | No operation |
+
+### 9.2 Register Mapping
+
+| Original | MK56-ASM | Notes |
+|----------|----------|-------|
+| `П0` - `П9` | `R0` - `R9` | Registers 0-9 |
+| `ПА` / `П10` | `RA` | Register 10 (A) |
+| `ПВ` / `П11` | `RB` | Register 11 (B) |
+| `ПС` / `П12` | `RC` | Register 12 (C) |
+| `ПД` / `П13` | `RD` | Register 13 (D) |
+
+### 9.3 Example Translation
+
+**Original listing (from manual):**
+```
+00  П0      ; Store n
+01  1
+02  П1      ; result = 1
+03  ИП0
+04  1
+05  −
+06  x<0 11  ; if < 0, done
+07  П0
+08  ИП1
+09  ×
+10  БП 03
+11  ИП1
+12  С/П
+```
+
+**MK56-ASM translation:**
+```asm
+        STO R0          ; Store n
+        1
+        STO R1          ; result = 1
+loop:   RCL R0
+        1
+        SUB
+        JLT done        ; if < 0, done
+        STO R0
+        RCL R1
+        MUL
+        JMP loop
+done:   RCL R1
+        HALT
+.END
+```
+
+### 9.4 Address Format
+
+| Original | MK56-ASM | Notes |
+|----------|----------|-------|
+| `БП 25` | `JMP 25` | Numeric address |
+| `БП 25` | `JMP loop` | Label reference (preferred) |
+| `В/О 50` | `CALL sub1` | Subroutine call |
 
 ---
 

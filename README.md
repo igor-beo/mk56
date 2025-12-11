@@ -4,14 +4,14 @@
   <img src="docs/images/mk56-calculator.png" alt="MK-56 Calculator" width="300">
 </p>
 
-A complete development toolkit for the **MK-56 "Elektronika"** Soviet programmable calculator, featuring an assembly language, cross-platform assemblers, and an interactive emulator.
+A complete development toolkit for the **MK-56 "Elektronika"** Soviet programmable calculator, featuring an assembly language, assembler, and interactive emulator.
 
 ## 🎯 Overview
 
 The MK-56 was a Soviet programmable RPN calculator produced in the 1980s. This project provides modern tools to:
 
 - Write programs in human-readable **MK56-ASM** assembly language
-- Assemble programs using C or Python assemblers
+- Assemble programs to binary using the C assembler
 - Run and debug programs in an interactive emulator with TUI
 
 ```
@@ -22,10 +22,9 @@ The MK-56 was a Soviet programmable RPN calculator produced in the 1980s. This p
 
 | Component | Language | Description |
 |-----------|----------|-------------|
-| [asm/assembler-c/](asm/assembler-c/) | C | High-performance assembler |
-| [asm/assembler-python/](asm/assembler-python/) | Python | Cross-platform assembler |
-| [asm/emulator/](asm/emulator/) | C | Interactive emulator with ncurses TUI |
-| [asm/examples/](asm/examples/) | MK56-ASM | Example programs |
+| [assembler/](assembler/) | C | MK56-ASM assembler |
+| [emulator/](emulator/) | C | Interactive emulator with ncurses TUI |
+| [asm/](asm/) | - | Language specification & examples |
 | [docs/](docs/) | Markdown | Complete device documentation |
 | [programs/](programs/) | - | Mathematical program library |
 | [editors/](editors/) | - | IDE extensions (VSCode) |
@@ -35,11 +34,11 @@ The MK-56 was a Soviet programmable RPN calculator produced in the 1980s. This p
 ### Build
 
 ```bash
-# Build C assembler
-cd asm/assembler-c && make && cd ../..
+# Build assembler
+cd assembler && make && cd ..
 
 # Build emulator
-cd asm/emulator && make && cd ../..
+cd emulator && make && cd ..
 ```
 
 ### Write a Program
@@ -55,10 +54,10 @@ cd asm/emulator && make && cd ../..
 
 ```bash
 # Assemble
-./asm/assembler-c/mk56asm square.asm
+./assembler/mk56asm square.asm
 
 # Run with input value 5
-./asm/emulator/mk56emu square.bin -c -i 5
+./emulator/mk56emu square.bin -c -i 5
 # Result: X = 25
 ```
 

@@ -60,12 +60,12 @@ make clean
 ## Example
 
 ```bash
-$ ./mk56asm ../examples/sinh.asm -v -l sinh.lst
+$ ./mk56asm ../asm/examples/sinh.asm -v -l sinh.lst
 
-Assembling: ../examples/sinh.asm
+Assembling: ../asm/examples/sinh.asm
   Parsed 7 instructions
   Found 1 labels
-Output: ../examples/sinh.bin (15 bytes)
+Output: ../asm/examples/sinh.bin (15 bytes)
 Listing: sinh.lst
 
 Assembly Listing:
@@ -83,7 +83,7 @@ ADDR  BYTES                 SOURCE
 ## Project Structure
 
 ```
-assembler-c/
+assembler/
 ├── mk56asm.h       # Header: opcodes, structures, API
 ├── mk56asm.c       # Core assembler implementation
 ├── main.c          # CLI entry point
@@ -136,7 +136,7 @@ make test
 
 ## Related Files
 
-- [MK56-ASM-SPEC.md](../MK56-ASM-SPEC.md) - Language specification
-- [INSTRUCTION-SET.md](../INSTRUCTION-SET.md) - Quick reference
-- [assembler-python/](../assembler-python/) - Python implementation
+- [MK56-ASM-SPEC.md](../asm/MK56-ASM-SPEC.md) - Language specification
+- [INSTRUCTION-SET.md](../asm/INSTRUCTION-SET.md) - Quick reference
 - [emulator/](../emulator/) - MK-56 emulator
+- [examples/](../asm/examples/) - Example programs

@@ -228,14 +228,13 @@ printf("Result: %g\n", result);
 make test
 
 # Test specific programs
-./mk56emu ../examples/sinh.bin -c -i 1       # sinh(1) = 1.1752
-./mk56emu ../examples/factorial.bin -c -i 5   # 5! = 120
-./mk56emu ../examples/det2x2.bin -c -r R8=5 -r R9=4 -r R5=1.5 -r R6=3  # = 9
+./mk56emu ../asm/examples/sinh.bin -c -i 1       # sinh(1) = 1.1752
+./mk56emu ../asm/examples/factorial.bin -c -i 5   # 5! = 120
+./mk56emu ../asm/examples/det2x2.bin -c -r R8=5 -r R9=4 -r R5=1.5 -r R6=3  # = 9
 ```
 
 ## Related Files
 
-- [MK56-ASM-SPEC.md](../MK56-ASM-SPEC.md) - Assembly language specification
-- [assembler-c/](../assembler-c/) - C assembler
-- [assembler-python/](../assembler-python/) - Python assembler
-- [examples/](../examples/) - Example programs
+- [MK56-ASM-SPEC.md](../asm/MK56-ASM-SPEC.md) - Assembly language specification
+- [assembler/](../assembler/) - C assembler
+- [examples/](../asm/examples/) - Example programs
