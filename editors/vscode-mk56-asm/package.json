@@ -1,0 +1,30 @@
+{
+  "name": "mk56-asm",
+  "displayName": "MK-56 Assembly",
+  "description": "Syntax highlighting for MK-56 calculator assembly language",
+  "version": "1.0.0",
+  "publisher": "mk56",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mk56asm",
+        "aliases": ["MK-56 Assembly", "mk56asm"],
+        "extensions": [".asm", ".mk56"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mk56asm",
+        "scopeName": "source.mk56asm",
+        "path": "./syntaxes/mk56-asm.tmLanguage.json"
+      }
+    ]
+  }
+}

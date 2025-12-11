@@ -1,0 +1,115 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "MK-56 Assembly",
+  "scopeName": "source.mk56asm",
+  "fileTypes": ["asm", "mk56"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#labels" },
+    { "include": "#directives" },
+    { "include": "#instructions" },
+    { "include": "#registers" },
+    { "include": "#numbers" },
+    { "include": "#strings" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.mk56asm",
+          "match": ";.*$"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.function.label.mk56asm",
+          "match": "^\\s*([a-zA-Z_][a-zA-Z0-9_]*):"
+        },
+        {
+          "name": "variable.other.label.mk56asm",
+          "match": "(?<=\\s)[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*$)"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.mk56asm",
+          "match": "\\b(ORG|EQU|DB|DW|DS|INCLUDE|MACRO|ENDM)\\b",
+          "captures": {
+            "1": { "name": "keyword.control.directive.mk56asm" }
+          }
+        }
+      ]
+    },
+    "instructions": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.mk56asm",
+          "match": "\\b(ADD|SUB|MUL|DIV|NEG|ABS|SQRT|SQR|INV|POW|EXP|EXP10|LN|LOG)\\b"
+        },
+        {
+          "name": "keyword.operator.trig.mk56asm",
+          "match": "\\b(SIN|COS|TAN|ASIN|ACOS|ATAN)\\b"
+        },
+        {
+          "name": "keyword.control.stack.mk56asm",
+          "match": "\\b(PUSH|DUP|DROP|SWAP|ROT|CLX|ENTER|LASTX)\\b"
+        },
+        {
+          "name": "keyword.control.memory.mk56asm",
+          "match": "\\b(STO|RCL)\\b"
+        },
+        {
+          "name": "keyword.control.flow.mk56asm",
+          "match": "\\b(JMP|JLT|JGE|JEQ|JNE|JSR|RTN|HALT|NOP)\\b"
+        },
+        {
+          "name": "constant.language.mk56asm",
+          "match": "\\b(PI)\\b"
+        }
+      ]
+    },
+    "registers": {
+      "patterns": [
+        {
+          "name": "variable.language.register.mk56asm",
+          "match": "\\b(R[0-9]|R[A-D])\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.mk56asm",
+          "match": "\\b-?[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.mk56asm",
+          "match": "\\b-?[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.hex.mk56asm",
+          "match": "\\b0x[0-9A-Fa-f]+\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.mk56asm",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.mk56asm",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

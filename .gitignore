@@ -1,0 +1,46 @@
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.bin
+*.lst
+
+# Compiled binaries (keep source, not outputs)
+asm/assembler-c/mk56asm
+asm/emulator/mk56emu
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# BMAD workflow artifacts (keep for development)
+# .bmad/
+
+# Local configuration
+.env
+.env.local
