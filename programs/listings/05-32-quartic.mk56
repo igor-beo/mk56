@@ -1,0 +1,35 @@
+; Program 5.32 (first of two programs numbered 5.32 in the book): roots of
+;   x⁴ + a3 x³ + a2 x² + a1 x + a0 = 0 by splitting into two quadratic factors
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.98-99 (book61.pdf pages 99-100)
+; Input: a0..a3 in R0..R3, Ra = 2(1 + |a_max|).
+; Output (В/О, С/П): x1 in X, x2 in Y if real; if x1,2 are complex the program
+; stops with ЕГГОГ (deliberate 0 ÷ at 44): С/П then shows d in X and m in Y
+; (x = d ± j·m). С/П again gives x3, x4 the same way. After the first pair
+; Rd and R7 hold the coefficients of the quadratic factor.
+; Resuming after ЕГГОГ requires: the failed ÷ leaves X, Y, Z, T unchanged and
+; С/П continues at the step after the failing one (45).
+; Steps 22 and 70 are printed with the ambiguous "+"-like glyph; 70 must be ÷
+; (checked by simulation), 22 is read as ÷ (does not affect this example).
+;
+; Book example: x⁴ + 9x³ + 31x² + 59x + 60 = 0 -> x1,2 = −1 ± j·1,9999999 (about
+; 7 min), x3 = −3, x4 = −4 (about 10 s); Rd = −2, R7 = 4,9999998 after the first pair.
+; @reg R0=60 R1=59 R2=31 R3=9 Ra=122
+; @run
+; @expect error
+; @expect Rd=-2 tol=1e-5
+; @expect R7=4.9999998 tol=1e-5
+; @run
+; @expect X=-1 tol=1e-5
+; @run
+; @expect X=-3 tol=1e-5
+;
+00: ИП3 /-/ 2 ÷ Пd ИПd В↑ В↑ ИП3 +
+10: П6 × ИП2 + П5 × ИП1 + Fx=0 65
+20: ИП1 ИП3 ÷ В↑ Fx² ИП0 − Fx≥0 65 F√
+30: + П7 ИПd 2 ÷ В↑ Fx² ИП7 −
+39: Fx<0 50 /-/ F√ 0 ÷ Cx F⟳ ↔ БП 54
+50: F√ + ÷ FBx С/П ИП3 /-/ ИПd − Пd
+60: ИП0 ИП7 ÷ БП 31 ↔ ИП6 + Fx≠0 84
+70: ÷ П7 В↑ ИП5 − × ИП0 + Fx<0 84
+80: ИПd ИПa − Пd ИПa 2 ÷ Пa ИПd +
+90: Пd FBx − Fx=0 05 ИП7 БП 32

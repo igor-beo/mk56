@@ -1,0 +1,16 @@
+; Program 3.7: Angle in degrees, minutes, seconds -> radians
+; phi = ((phi''/60 + phi')/60 + phi°) * pi/180
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.57 (book61.pdf page 58)
+; Input: phi° in X, С/П; phi' in X, С/П; phi'' in X, С/П.  Output: phi (rad) in X;
+; R0 = angle in decimal degrees.
+;
+; Book example: 114°, 35', 29,616'' -> phi = 2; R0 = 114,59156
+; @input 114
+; @input 35
+; @input 29.616
+; @expect X=2
+; @expect R0=114.59156
+;
+00: П8 С/П П9 С/П В↑ 6 0 ÷ ИП9 +
+10: 6 0 ÷ ИП8 + П0 1 8 0 ÷
+20: Fπ × С/П БП 00

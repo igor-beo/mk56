@@ -1,0 +1,18 @@
+; Program 5.15: Root of x = f(x) by simple iteration, stopping at "machine zero"
+;   (x(n+1) = x(n) to the last digit)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.89 (book61.pdf page 90)
+; The book's listing is a template: ПД, then the user's f(x) code ("..."), then
+; ИПД ↔ ПД − Fx=0 01 ИПД С/П. Input: x0 in X. Output: root in X (also in Rd).
+; This instance uses the book's example f(x) = sin x + 0,25 (code "ИПД Fsin ИП9 +",
+; 0,25 = R9, given on p.88 for program 5.14), angle mode radians.
+; NOTE: termination needs two successive iterates to be bit-identical; an emulator
+; with binary doubles may stop later than the 8-digit calculator or cycle.
+;
+; Book example: x0 = 1,2 (from p.88) -> x = 1,1712298 (about 60 s)
+; @angle rad
+; @reg R9=0.25
+; @input 1.2
+; @expect X=1.1712298 tol=1e-6
+;
+00: Пd ИПd Fsin ИП9 + ИПd ↔ Пd −
+09: Fx=0 01 ИПd С/П

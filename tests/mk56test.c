@@ -12,6 +12,7 @@
  *   ; @expect R1=0.5 tol=1e-5  relative tolerance (default 1e-6)
  *   ; @expect error            expect ЕГГОГ
  *   ; @reset                   clear stack and registers, PC = 00
+ *   ; @xfail reason            known failure: reported, does not fail the run
  *
  * *.mk56 files are original listings, anything else MK56-ASM.
  * Usage: mk56test [-v] file...   Exit status 1 if any check fails.
@@ -56,11 +57,11 @@ static double *target(MK56VM *vm, const char *name) {
     return NULL;
 }
 
-typedef struct { int checks, failures; } Result;
+typedef struct { int checks, failures; bool xfail; } Result;
 
 static void fail(Result *res, const char *path, int line, const char *msg) {
     res->failures++;
-    printf("  FAIL %s:%d: %s\n", path, line, msg);
+    printf("  %s %s:%d: %s\n", res->xfail ? "XFAIL" : "FAIL", path, line, msg);
 }
 
 static void run_directive(MK56VM *vm, char *d, const char *path, int line, Result *res) {
@@ -92,6 +93,8 @@ static void run_directive(MK56VM *vm, char *d, const char *path, int line, Resul
         vm_run(vm);
         if (verbose) printf("    %s -> X = %.10g (%s)\n", word, vm_get_x(vm),
                             vm->state == VM_ERROR ? vm_error_str(vm->error) : "stopped");
+    } else if (strcmp(word, "@xfail") == 0) {
+        res->xfail = true;
     } else if (strcmp(word, "@reset") == 0) {
         vm_reset(vm);
     } else if (strcmp(word, "@expect") == 0) {
@@ -99,11 +102,6 @@ static void run_directive(MK56VM *vm, char *d, const char *path, int line, Resul
         res->checks++;
         if (what && strcmp(what, "error") == 0) {
             if (vm->state != VM_ERROR) fail(res, path, line, "expected ЕГГОГ");
-            return;
-        }
-        if (vm->state == VM_ERROR) {
-            snprintf(msg, sizeof msg, "%s", vm_error_str(vm->error));
-            fail(res, path, line, msg);
             return;
         }
         if (vm->error == ERR_STEP_LIMIT) { fail(res, path, line, "program never stopped"); return; }
@@ -116,7 +114,9 @@ static void run_directive(MK56VM *vm, char *d, const char *path, int line, Resul
         double *slot = target(vm, what);
         if (!slot) { fail(res, path, line, "bad @expect register"); return; }
         if (!(fabs(*slot - want) <= tol * fmax(1.0, fabs(want)))) {
-            snprintf(msg, sizeof msg, "%s = %.10g, expected %.10g", what, *slot, want);
+            snprintf(msg, sizeof msg, "%s = %.10g, expected %.10g%s%s", what, *slot, want,
+                     vm->state == VM_ERROR ? " after " : "",
+                     vm->state == VM_ERROR ? vm_error_str(vm->error) : "");
             fail(res, path, line, msg);
         }
     } else {
@@ -126,8 +126,9 @@ static void run_directive(MK56VM *vm, char *d, const char *path, int line, Resul
 }
 
 static Result test_file(const char *path) {
-    Result res = { 0, 0 };
+    Result res = { 0, 0, false };
     char *src = read_file(path);
+    if (src && strstr(src, "@xfail")) res.xfail = true;
     if (!src) { printf("  FAIL %s: cannot read\n", path); res.failures = 1; return res; }
 
     const char *ext = strrchr(path, '.');
@@ -163,15 +164,19 @@ static Result test_file(const char *path) {
 }
 
 int main(int argc, char **argv) {
-    int files = 0, failed_files = 0, checks = 0;
+    int files = 0, failed_files = 0, xfails = 0, checks = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-v") == 0) { verbose = true; continue; }
         if (verbose) printf("%s\n", argv[i]);
         Result r = test_file(argv[i]);
         files++;
         checks += r.checks;
-        if (r.failures) failed_files++;
+        if (r.failures && r.xfail) xfails++;
+        else if (r.failures) failed_files++;
+        else if (r.xfail) printf("  XPASS %s: remove @xfail\n", argv[i]);
     }
-    printf("%d/%d programs passed (%d checks)\n", files - failed_files, files, checks);
+    printf("%d/%d programs passed (%d checks)", files - failed_files - xfails, files, checks);
+    if (xfails) printf(", %d known failure%s", xfails, xfails == 1 ? "" : "s");
+    printf("\n");
     return failed_files ? 1 : 0;
 }

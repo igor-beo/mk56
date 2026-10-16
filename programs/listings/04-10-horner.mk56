@@ -1,0 +1,18 @@
+; Program 4.10: Real polynomial of degree n <= 11 by Horner's scheme
+;   P(x) = a0 + a1 x + ... + an xⁿ = (...(an x + a(n-1))x + ... + a1)x + a0
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.65-66 (book61.pdf pages 66-67)
+; Input: a0 = Rc, a1..an = R1..Rn (R10 = Ra, R11 = Rb), x in X. For a new x key
+; only x and С/П.
+; The book's listing is generic: steps 01-02 ("... ...") hold n as two digits
+; (5 is keyed as 0 5) and step 04 is ИПn. This instance has n = 4 (01-02 = 0 4,
+; 04 = ИП4).
+;
+; Book example: P(x) = 0 + 1x + 2x² + 3x³ + 4x⁴ (n = 4): P(1) = 10, P(2) = 98
+; @reg Rc=0 R1=1 R2=2 R3=3 R4=4
+; @input 1
+; @expect X=10
+; @input 2
+; @expect X=98
+;
+00: Пd 0 4 П0 ИП4 В↑ ↔ ИПd × КИП0
+10: + ИП0 Fx=0 06 ↔ ИПc + С/П БП 00

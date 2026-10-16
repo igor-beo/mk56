@@ -1,0 +1,9 @@
+; Program 4.5: Inverse hyperbolic cosine arch(x) = ln(x + sqrt(x² − 1)), x > 1
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.64 (book61.pdf page 65)
+; Input: x in X.  Output: arch(x) in X.
+;
+; Book example: arch(2) = 1,3169579
+; @input 2
+; @expect X=1.3169579 tol=1e-5
+;
+00: В↑ Fx² 1 /-/ + F√ + Fln С/П

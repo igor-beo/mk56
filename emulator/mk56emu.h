@@ -39,7 +39,6 @@ typedef enum {
     ERR_UNDERFLOW,          // ЕГГОГ: |x| < 1e-99, X set to 0 (manual p.24)
     ERR_INVALID_OPCODE,     // code not documented in the manual
     ERR_BAD_ADDRESS,        // jump target outside 00-97
-    ERR_BAD_REGISTER,       // indirect register number outside 0-13
     ERR_STEP_LIMIT          // vm_run stopped a program that never halts
 } VMError;
 

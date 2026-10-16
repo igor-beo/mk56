@@ -1,0 +1,23 @@
+; Program 4.18: Coefficients of the Hermite polynomial Hn(x)
+; (the probabilists' form, leading coefficient 1)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.69 (book61.pdf page 70)
+; Input: n in X.  Output: each С/П shows the next coefficient, highest power first
+; (powers n, n-2, n-4, ...), until 0 is displayed.
+;
+; Book example: n = 8 -> H8(x) = 1x⁸ − 28x⁶ + 210x⁴ − 420x² + 105
+; @input 8
+; @expect X=1
+; @run
+; @expect X=-28
+; @run
+; @expect X=210
+; @run
+; @expect X=-420
+; @run
+; @expect X=105
+; @run
+; @expect X=0
+;
+00: П2 1 П3 П8 + П4 2 П5 ИП8 С/П
+10: ИП4 1 − П9 1 − П4 ИП9 × ИП8
+20: × ИП5 /-/ ÷ П8 ИП5 2 + П5 БП 08

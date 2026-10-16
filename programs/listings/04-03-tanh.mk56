@@ -1,0 +1,11 @@
+; Program 4.3: Hyperbolic tangent th(x) = sh(x)/sqrt(1 + sh²(x))
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.64 (book61.pdf page 65)
+; Input: x in X.  Output: th(x) in X.  (For cth(x) = 1/th(x) the book inserts F1/x
+; before С/П.)
+;
+; Book example: th(1) = 0,76159417
+; @input 1
+; @expect X=0.76159417 tol=1e-5
+;
+00: Feˣ В↑ F1/x − 2 ÷ В↑ Fx² 1 +
+10: F√ ÷ С/П

@@ -1,0 +1,42 @@
+; Program 5.1: System of n <= 4 linear equations sum_j a_ij x_j = a_(i,n+1)
+;   (b_i = a_(i,n+1)) by optimal elimination
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.79 (book61.pdf page 80)
+; Input: n in R0; then, from address 00, every coefficient row by row
+;   (a_i1 ... a_in, b_i), each keyed into X and followed by С/П (intermediate
+;   displays are to be ignored).
+; Output: x1 in X; x1 -> Rd, x2 -> Rc, x3 -> Rb, x4 -> Ra.
+; Uses all 98 steps. "F," in the book is F⟳ (stack rotation).
+;
+; Book example (n = 3):
+;   | 4     0,24  -0,08 |   | 8  |
+;   | 0,09  3     -0,15 | x = | 9  |
+;   | 0,04  -0,08  4    |   | 20 |
+;   -> x1 = 1,9091983, x2 = 3,1949644, x3 = 5,0448073 (about 2 min)
+; @reg R0=3
+; @input 4
+; @input 0.24
+; @input -0.08
+; @input 8
+; @input 0.09
+; @input 3
+; @input -0.15
+; @input 9
+; @input 0.04
+; @input -0.08
+; @input 4
+; @input 20
+; @expect X=1.9091983
+; @expect Rd=1.9091983
+; @expect Rc=3.1949644
+; @expect Rb=5.0448073
+;
+00: П4 1 4 П2 ИП0 П1 С/П ИП4 ÷ КП2
+10: FL1 06 1 4 П3 ИП0 П1 FL1 23 КИП3
+20: С/П БП 19 Cx КП2 FL1 24 КП2 ИП0 ИП2
+30: + П1 П2 ИП3 − Fx≠0 42 С/П ПП 84
+40: БП 28 КИП0 ИП0 П3 С/П КИП2 − П4 С/П
+50: КИП2 − ИП4 ÷ КП1 FL3 49 ИП1 ИП0 +
+60: П3 1 4 П1 П2 КИП1 /-/ ПП 84 ИП3
+70: + П3 ИП1 − Fx=0 65 ИП0 П1 КИП3 КП2
+80: FL1 78 БП 12 ИП0 ↔ В↑ КИП3 × КИП1
+90: + КП2 F⟳ FL0 86 F⟳ П0 В/О

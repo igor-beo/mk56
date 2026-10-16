@@ -1,0 +1,36 @@
+; Program 5.32 (second of two programs numbered 5.32 in the book; p.99): roots of
+;   x⁵ + a4 x⁴ + a3 x³ + a2 x² + a1 x + a0 = 0 by finding a real root and reducing
+;   to a quartic
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.99 (book61.pdf page 100)
+; Input: a0..a4 in R0..R4, Ra = Rb = 2(1 + |a_max|).
+; Output (В/О, С/П): 1) x1 in X, x2 in Y and x3 in Rd if x1,2,3 are real;
+; 2) ЕГГОГ if x1,2 are complex: then ↔ gives d, and ↔ /-/ F√ gives m (x = d ± j·m),
+;    x3 in Rd. Then БП 76 С/П gives x4 in X, x5 in Y (or ЕГГОГ for a complex pair).
+; The ЕГГОГ here is F√ of a negative number at 91; the book relies on X (= −m²) and
+; Y (= d) surviving the error.
+; "F," in the book is F⟳. Steps 37, 39 and 60 are printed with ambiguous glyphs;
+; 37 = ÷ and 39 = − are confirmed by simulation, 60 is read as ÷ (either reading
+; gives the same roots for this example).
+;
+; Book example: x⁵ + 8x⁴ + 31x³ + 80x² + 94x + 20 = 0 -> x1,2 = −1 ± j·3,0000178,
+;   x3 = −3,7320507, x4 = −0,2679458, x5 = −2,000032 (about 13 min).
+;   Exact roots: −1 ± 3j, −2 ± sqrt(3), −2; the printed x4, x5 carry the method's
+;   8-digit error, hence tol=5e-5 on x4.
+; @reg R0=20 R1=94 R2=80 R3=31 R4=8 Ra=190 Rb=190
+; @run
+; @expect error
+; @expect Rd=-3.7320507 tol=1e-5
+; @start 76
+; @run
+; @expect X=-0.2679458 tol=5e-5
+;
+00: Cx Пc ↔ FBx В↑ В↑ ИП4 + П8 ×
+10: ИП3 + П7 × ИПc Fx=0 63 F⟳ ИП2 +
+20: П6 × ИП1 + П5 × ИП0 + Fx<0 34
+30: F⟳ ИПa + В↑ F⟳ ИПa 2 ÷ Пa −
+40: П9 − Fx=0 03 ИПc Fx=0 76 ИПb Пa Пc
+50: ИП9 Пd ИП5 П0 ИП7 П3 ИП8 П4 /-/ 2
+60: ÷ БП 35 F⟳ ИП6 + ↔ ИП8 + ÷
+70: П5 В↑ ИП7 − БП 25 ИП0 ИП5 ÷ П5
+80: ИП4 /-/ ИП9 − П9 2 ÷ В↑ Fx² ИП5
+90: − F√ + ÷ FBx С/П

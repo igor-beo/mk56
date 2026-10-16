@@ -243,17 +243,19 @@ static void execute(MK56VM *vm, uint8_t op) {
             return_push(vm, pc);
             jump(vm, indirect(vm, lo));
             return;
+        /* A register number outside 0-13 is not an error: programs use
+         * "Пn КИПn ИПn" to take the integer part of any number and discard
+         * what КИПn loads (Дьяконов 3.1-3.4). Such stores are dropped and
+         * loads give 0 (inferred). */
         case 0xB:                            // К x→П
             idx = indirect(vm, lo);
-            if (idx < 0 || idx >= MK56_NUM_REGISTERS) { set_error(vm, ERR_BAD_REGISTER); return; }
-            vm->regs[idx] = x;
+            if (idx >= 0 && idx < MK56_NUM_REGISTERS) vm->regs[idx] = x;
             vm->lift = true;
             return;
         case 0xD:                            // К П→x
             idx = indirect(vm, lo);
-            if (idx < 0 || idx >= MK56_NUM_REGISTERS) { set_error(vm, ERR_BAD_REGISTER); return; }
             lift_stack(vm);
-            X = vm->regs[idx];
+            X = (idx >= 0 && idx < MK56_NUM_REGISTERS) ? vm->regs[idx] : 0;
             vm->lift = true;
             return;
         default:                             // К x?0: register untouched if it holds (p.70)
@@ -298,7 +300,11 @@ static void execute(MK56VM *vm, uint8_t op) {
     case MK56_COS:  unary(vm, cos(to_rad(vm, x))); break;
     case MK56_TAN:  unary(vm, tan(to_rad(vm, x))); break;
 
-    case MK56_PI:   lift_stack(vm); X = MK56_PI_CONST; break;
+    case MK56_PI:                            // also saves X to X1 (Дьяконов p.23)
+        vm->lastx = x;
+        lift_stack(vm);
+        X = MK56_PI_CONST;
+        break;
     case MK56_SQRT:
         if (x < 0) { set_error(vm, ERR_DOMAIN); return; }
         unary(vm, sqrt(x));
@@ -403,8 +409,10 @@ void vm_reset(MK56VM *vm) {
 // EXECUTION
 // ============================================================================
 
+/* After ЕГГОГ the stack is intact and С/П continues with the next step;
+ * programs rely on this to report complex roots (Дьяконов 5.32). */
 bool vm_step(MK56VM *vm) {
-    if (vm->state == VM_ERROR) return false;
+    vm->error = ERR_NONE;
     vm->state = VM_RUNNING;
 
     uint8_t op = vm->program[vm->pc];
@@ -468,7 +476,6 @@ const char* vm_error_str(VMError err) {
     case ERR_UNDERFLOW:      return "ЕГГОГ: underflow";
     case ERR_INVALID_OPCODE: return "Undocumented opcode";
     case ERR_BAD_ADDRESS:    return "Jump outside 00-97";
-    case ERR_BAD_REGISTER:   return "Indirect register outside 0-13";
     case ERR_STEP_LIMIT:     return "Step limit reached (endless loop?)";
     default:                 return "Unknown error";
     }

@@ -1,0 +1,10 @@
+; Program 4.7: Inverse hyperbolic cotangent arcth(x) = ln sqrt(1 + 2/(x − 1)), x > 1
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.65 (book61.pdf page 66)
+; Input: x in X.  Output: arcth(x) in X.
+;
+; Book example: x = 1,3130352 -> arcth(x) = 1,0000001
+; @input 1.3130352
+; @expect X=1.0000001 tol=1e-5
+;
+00: В↑ 1 − 2 ↔ ÷ 1 + F√ Fln
+10: С/П

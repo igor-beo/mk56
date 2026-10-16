@@ -3,7 +3,7 @@
  *
  * Codes are the real machine codes from the original manual
  * (references/MK-56 inst.pdf, Table 4, p.51-55). The full write-up with
- * page citations is _bmad-output/planning-artifacts/mk56-isa-from-manual.md.
+ * page citations is docs/machine-reference.md.
  *
  * Every opcode has two spellings:
  *   key  - the original listing notation as printed in Soviet manuals

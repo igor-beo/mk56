@@ -1,0 +1,24 @@
+; Program 7.9: Number of turns w of a coil with a closed core (fig. 7.7)
+;   w = sqrt(L0 lm (1 + mu dl/(a lm))/(4 pi mu Fc))
+;   (Fc = core cross-section, lm = mean magnetic path length, dl = gap)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.179-180 (book61.pdf pages 180-181)
+; Input: Fc, lm, a, dl, mu and L0 into X, each followed by С/П
+; (Fc = R9, lm = R8, a = R7, dl = R6, mu = R5).  Output: w in X.
+; For a new L0 key it and press С/П.
+;
+; Book example: Fc = 1 cm², lm = 10 cm, a = 1,5 cm, dl = 0,05 cm, mu = 1000,
+;   L0 = 5*10^7 nH -> w = 415,23228; L0 = 1*10^7 nH -> w = 185,69752
+; @input 1
+; @input 10
+; @input 1.5
+; @input 0.05
+; @input 1000
+; @input 5e7
+; @expect X=415.23228 tol=1e-5
+; @input 1e7
+; @expect X=185.69752 tol=1e-5
+;
+00: П9 С/П П8 С/П П7 С/П П6 С/П П5 С/П
+10: ИП8 × 4 ÷ Fπ ÷ ИП9 ÷ ИП5 ÷
+20: ИП5 ИП6 × ИП7 ÷ ИП8 ÷ 1 + ×
+30: F√ БП 09
