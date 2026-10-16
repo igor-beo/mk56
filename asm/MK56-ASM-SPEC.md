@@ -166,7 +166,7 @@ Test directives sit in comments. `mk56test` runs them (see
 | `@start nn` | Set the program counter |
 | `@input v` | Key v into X, press С/П, run until stop |
 | `@run` | Press С/П without input |
-| `@expect X=v [tol=1e-5]` | Check X, Y, Z, T or a register. The relative tolerance defaults to 1e-6 |
+| `@expect X=v [tol=1e-5]` | Check X, Y, Z, T or a register. The tolerance defaults to 1e-6; it is relative for &#124;v&#124; > 1 and absolute below, so give a tighter `tol=` for small values |
 | `@expect error` | Expect ЕГГОГ |
 | `@reset` | Clear stack and registers, PC = 00 |
 

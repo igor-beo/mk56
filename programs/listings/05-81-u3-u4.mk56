@@ -1,0 +1,16 @@
+; Program 5.81: Auxiliary coefficients U3 and U4 (normality test for A and E)
+;   U3 = sqrt(6(N−1)/((N+1)(N+3))), U4 = sqrt(24N(N−2)(N−3)/((N−1)²(N+3)(N+5)))
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.136 (book61.pdf page 137)
+; Input: N in X. Output: U3 in X; С/П: U4 in X.
+; The U4 branch reuses the "+ ÷ ИП0 3 + ÷ F√ С/П" tail via БП 07.
+;
+; Book example: N = 10 -> U3 = 0,61450986, U4 = 0,92244356
+; @input 10
+; @expect X=0.61450986
+; @run
+; @expect X=0.92244356
+;
+00: П0 1 − 6 × ИП0 1 + ÷ ИП0
+10: 3 + ÷ F√ С/П ИП0 2 4 × ИП0
+20: 2 − × ИП0 3 − × ИП0 1 −
+30: Fx² ÷ ИП0 5 БП 07

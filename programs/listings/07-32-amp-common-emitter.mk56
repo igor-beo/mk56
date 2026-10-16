@@ -1,0 +1,32 @@
+; Program 7.32: Small-signal amplifier stage, common emitter (fig. 7.11б, 7.12б)
+;   Rвх = rб + rэ (rк + Rн)/(rк (1 − a) + rэ + Rн),
+;   KI = −(a rк − rэ)/(rк (1 − a) + rэ + Rн),
+;   KU = −(a rк − rэ) Rн/(rэ (rк + Rн) + rб ((1 − a) rк + rэ + Rн)),
+;   KE = −(a rк − rэ) Rн/(rэ (rк + Rн) + (Rи + rб)((1 − a) rк + rэ + Rн)),
+;   Rвых = rк (1 − a) + rэ (1 + (a rк − rэ)/(rэ + rб + Rи))
+;   (the book's formula prints "a rк + rэ" in Rвых; the listing and the book's
+;   result use a rк − rэ)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.195 (book61.pdf page 196)
+; Input (as in 7.31): rб = R1, rэ = R2, rк = R3, Rи = R4, Rн = R5, a = R6, then В/О С/П.
+; Output: KE = R0 = X, KU = Ra, KI = Rb, Rвх = Rc, Rвых = Rd.
+;
+; Book example: rб = 400 Ohm, rэ = 25 Ohm, rк = 10^6 Ohm, Rи = 1000 Ohm,
+;   Rн = 5000 Ohm, a = 0,98 -> KU = −139,45851, KE = −81,447388, KI = −39,15984,
+;   Rвх = 1403,996 Ohm, Rвых = 37217,544 Ohm
+; @reg R1=400 R2=25 R3=1e6 R4=1000 R5=5000 R6=0.98
+; @run
+; @expect X=-81.447388
+; @expect Ra=-139.45851
+; @expect Rb=-39.15984
+; @expect Rc=1403.996
+; @expect Rd=37217.544
+;
+00: ИП6 ИП3 × ИП2 − П7 1 ИП6 − ИП3
+10: × ИП2 + ИП5 + П8 ИП4 ИП1 + П9
+20: ИП8 × ИП3 ИП5 + ИП2 × Пc + F1/x
+30: ИП5 ИП7 /−/ × Пb × П0 ИПb ИП1 ИП8
+40: × ИПc + ÷ Пa ИП7 /−/ ИП8 ÷ Пb
+50: ИП2 ИП5 ИП3 + × ИП8 ÷ ИП1 + Пc
+60: ИП3 ИП6 × ИП2 − ИП9 ИП2 + ÷ 1
+70: + ИП2 × 1 ИП6 − ИП3 × + Пd
+80: ИП0 С/П

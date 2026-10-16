@@ -1,0 +1,23 @@
+; Program 6.31: Probability integral Φ(y) = sqrt(2/π)·∫[0..y] exp(−u²/2) du
+;   (= 2П(y) − 1) by the power series (6.18):
+;   Φ(y) = y·sqrt(2/π)·(1 − (y/2)²/(1!·3) + (y/2)⁴/(2!·5) − (y/2)⁶/(3!·7) + ...)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.167 (book61.pdf page 168)
+; Input: y in X.  Output: Φ(y) in X.
+; Terms are added until the sum stops changing (FBx − Fx=0). R4 = n (КИП4
+; pre-increments it), R5 = 2n+1, R6 = −y²/2, R7 = term, R8 = sum, R9 = y.
+; П(x) follows from (6.17): Φ(x) ↑ 1 + 2 ÷; erf(x) = Φ(x·sqrt(2)).
+;
+; Book examples: Φ(0,1) = 0,079655675 (33 s), Φ(1) = 0,6826895 (80 s),
+;   Φ(4) = 0,99993495 (5 min). The exact Φ(4) is 0,99993666; the printed value
+;   carries the 8-digit rounding error of the long alternating series, so it is
+;   not used as a check.
+; @input 0.1
+; @expect X=0.079655675
+; @input 1
+; @expect X=0.6826895
+;
+00: П9 Fx² 2 /-/ ÷ П6 2 Fπ ÷ F√
+10: ИП9 × П7 П8 0 П4 КИП4 ИП4 2 ×
+20: 1 + П5 ИП4 2 × 1 − ИП6 ×
+30: ИП4 ÷ ИП5 ÷ ИП7 × П7 ИП8 + П8
+40: FBx − Fx=0 16 ИП8 С/П БП 00

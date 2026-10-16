@@ -18,10 +18,11 @@ listing:
 
 **Status:** *verified* means our earlier transcription matched the book.
 *Corrected* means it had errors, now fixed; the most common was ÷ misread as
-+, because the book prints ÷ as a small bold "+". Details for every program
-are in [AUDIT.md](AUDIT.md).
++, because the book prints ÷ as a small bold "+". *Transcribed* means the
+program was added directly from the book. Details for every program are in
+[AUDIT.md](AUDIT.md).
 
-44 of 45 programs reproduce the book's results. 5.16 is a known failure: it
+71 of 72 programs reproduce the book's results. 5.16 is a known failure: it
 stops only when a Newton correction is exactly zero, which depends on the
 last digits of the real chip's sine.
 
@@ -53,6 +54,7 @@ last digits of the real chip's sine.
 | 3.15: Factorial n!, n ≥ 1 | p.61 | verified | [03-15-factorial.mk56](listings/03-15-factorial.mk56) |
 | 3.16: Factorial n!, n ≥ 0 | p.61 | verified | [03-16-factorial-any.mk56](listings/03-16-factorial-any.mk56) |
 | 3.17: Factorial of large n by Stirling's formula | p.61–62 | corrected | [03-17-stirling.mk56](listings/03-17-stirling.mk56) |
+| 3.19: Permutations, arrangements and combinations | p.62 | transcribed | [03-19-combinations.mk56](listings/03-19-combinations.mk56) |
 
 ### Elementary and special functions (ch. 4)
 
@@ -85,8 +87,33 @@ last digits of the real chip's sine.
 | 5.15: Root of x = f(x) by simple iteration, stopping at "machine zero" | p.89 | corrected | [05-15-iteration.mk56](listings/05-15-iteration.mk56) |
 | 5.16: Newton's method, stopping at machine zero | p.89 | corrected · known failure | [05-16-newton.mk56](listings/05-16-newton.mk56) |
 | 5.17: Newton's method, stopping when (x(n+1) − x(n))² < eps² | p.89 | verified | [05-17-newton-eps.mk56](listings/05-17-newton-eps.mk56) |
+| 5.22: Root by halving the interval (bisection) | p.92 | transcribed | [05-22-bisection.mk56](listings/05-22-bisection.mk56) |
+| 5.29: Quadratic equation | p.97 | transcribed | [05-29-quadratic.mk56](listings/05-29-quadratic.mk56) |
+| 5.30: Quadratic equation, reduced error for real roots | p.97 | transcribed | [05-30-quadratic-precise.mk56](listings/05-30-quadratic-precise.mk56) |
 | 5.32a: Roots of a 4th-degree equation | p.98–99 | corrected | [05-32-quartic.mk56](listings/05-32-quartic.mk56) |
 | 5.32b: Roots of a 5th-degree equation | p.98–99 | corrected | [05-32-quintic.mk56](listings/05-32-quintic.mk56) |
+| 5.46: Numerical integration by the trapezoid rule | p.107 | transcribed | [05-46-trapezoid.mk56](listings/05-46-trapezoid.mk56) |
+| 5.47: Numerical integration by Simpson's rule | p.107 | transcribed | [05-47-simpson.mk56](listings/05-47-simpson.mk56) |
+| 5.67: RC-circuit response (combined Euler method) | p.118 | transcribed | [05-67-rc-circuit.mk56](listings/05-67-rc-circuit.mk56) |
+| 5.80: Moments, mean, variance, asymmetry, excess | p.135 | transcribed | [05-80-moments.mk56](listings/05-80-moments.mk56) |
+| 5.81: Auxiliary coefficients U3, U4 | p.136 | transcribed | [05-81-u3-u4.mk56](listings/05-81-u3-u4.mk56) |
+| 5.82: Sample correlation coefficient | p.136 | transcribed | [05-82-correlation.mk56](listings/05-82-correlation.mk56) |
+| 5.85: Uniform random numbers, V = D(37V) | p.138 | transcribed | [05-85-random.mk56](listings/05-85-random.mk56) |
+| 5.86: Uniform random numbers, V = D(11V + π) | p.138 | transcribed | [05-86-random-pi.mk56](listings/05-86-random-pi.mk56) |
+| 5.87: Uniform random numbers in [a, b] | p.139 | transcribed | [05-87-random-ab.mk56](listings/05-87-random-ab.mk56) |
+| 5.88: Normal random numbers | p.139 | transcribed | [05-88-random-normal.mk56](listings/05-88-random-normal.mk56) |
+| 5.89: Least-squares line y = b0 + b1·x | p.140 | transcribed | [05-89-regression.mk56](listings/05-89-regression.mk56) |
+
+### Probability (ch. 6)
+
+| Program | Book | Status | Listing |
+|---|---|---|---|
+| 6.31: Probability integral Φ(y) by power series | p.167 | transcribed | [06-31-erf-series.mk56](listings/06-31-erf-series.mk56) |
+| 6.32: Φ(y) for y > 4 by asymptotic expansion | p.167 | transcribed | [06-32-erf-asymptotic.mk56](listings/06-32-erf-asymptotic.mk56) |
+| 6.33: Φ(y) for any y (series below 4, asymptotic from 4) | p.168 | transcribed | [06-33-erf-any.mk56](listings/06-33-erf-any.mk56) |
+| 6.34: Φ(x) = erf(x), 3-coefficient approximation (A–S 7.1.25) | p.168 | transcribed | [06-34-erf-approx3.mk56](listings/06-34-erf-approx3.mk56) |
+| 6.35: Φ(x) = erf(x), rounded-coefficient approximation | p.169 | transcribed | [06-35-erf-approx3-short.mk56](listings/06-35-erf-approx3-short.mk56) |
+| 6.36: Φ(x) = erf(x), 5-coefficient approximation (A–S 7.1.26) | p.169 | transcribed | [06-36-erf-approx5.mk56](listings/06-36-erf-approx5.mk56) |
 
 ### Engineering calculations (ch. 7)
 
@@ -94,12 +121,19 @@ last digits of the real chip's sine.
 |---|---|---|---|
 | 7.8: Number of turns w of a coil on a pot (armoured) core (fig. 7.6) | p.179 | corrected | [07-08-coil-pot-core.mk56](listings/07-08-coil-pot-core.mk56) |
 | 7.9: Number of turns w of a coil with a closed core (fig. 7.7) | p.179–180 | corrected | [07-09-coil-closed-core.mk56](listings/07-09-coil-closed-core.mk56) |
+| 7.28: Rectifier working into a filter capacitor | p.190 | transcribed | [07-28-rectifier.mk56](listings/07-28-rectifier.mk56) |
+| 7.29: Transistor physical parameters from h-parameters | p.191 | transcribed | [07-29-transistor-h-to-phys.mk56](listings/07-29-transistor-h-to-phys.mk56) |
+| 7.30: Transistor h-parameters from physical parameters | p.192 | transcribed | [07-30-transistor-phys-to-h.mk56](listings/07-30-transistor-phys-to-h.mk56) |
+| 7.31: Amplifier stage, common base | p.194 | transcribed | [07-31-amp-common-base.mk56](listings/07-31-amp-common-base.mk56) |
+| 7.32: Amplifier stage, common emitter | p.195 | transcribed | [07-32-amp-common-emitter.mk56](listings/07-32-amp-common-emitter.mk56) |
+| 7.33: Amplifier stage, common collector | p.195 | transcribed | [07-33-amp-common-collector.mk56](listings/07-33-amp-common-collector.mk56) |
 
-## Not in this library
+## Removed entries
 
-An earlier version of this library had 18 entries that do not exist in the
-book: generic outlines for a quadratic equation, Newton's method, trapezoid
+An earlier version of this library had 18 entries that are not in the book:
+generic outlines for a quadratic equation, Newton's method, trapezoid
 integration, bisection, combinatorics, statistics and circuit calculations.
-Several used keys the МК-56 does not have. They were removed. The book's
-own programs for these topics are listed in [AUDIT.md](AUDIT.md), and
-transcriptions are welcome.
+Several used keys the МК-56 does not have. They were replaced by the book's
+own programs for the same topics (3.19, 5.22, 5.29–5.30, 5.46–5.47, 5.67,
+5.80–5.82, 5.85–5.89, 6.31–6.36, 7.28–7.33). The book has no double-factorial program,
+so that entry has no replacement. See [AUDIT.md](AUDIT.md).

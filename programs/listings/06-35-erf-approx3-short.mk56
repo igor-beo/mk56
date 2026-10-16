@@ -1,0 +1,17 @@
+; Program 6.35: Φ(x) = erf(x) by the rounded-coefficient form (6.21) of (6.20),
+;   error about 1·10⁻⁴, using one register:
+;   Φ(x) = 1 − [λ(348 + λ(−96 + 748λ))/exp(x²)]·10⁻³,  λ = 1/(1 + 0,47x)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.169 (book61.pdf page 170)
+; Input: x in X.  Output: Φ(x) in X.
+; The two В↑ keep a copy of x deep in the stack for the final exp(x²).
+;
+; Book examples: Φ(0,1) = 0,1123962; Φ(1) = 0,8426262
+; @input 0.1
+; @expect X=0.1123962
+; @input 1
+; @expect X=0.8426262
+;
+00: В↑ В↑ 0 , 4 7 × 1 + F1/x
+10: П9 7 4 8 × 9 6 − ИП9 ×
+20: 3 4 8 + ИП9 × 1 ВП 3 ÷
+30: ↔ Fx² Feˣ ÷ 1 ↔ − С/П БП 00

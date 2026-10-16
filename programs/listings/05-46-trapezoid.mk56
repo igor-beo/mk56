@@ -1,0 +1,30 @@
+; Program 5.46: Numerical integration by the trapezoid rule
+;   I = h/2 * sum(y_i + y_(i+1)), i = 0..m-1, h = (b - a)/m
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.107 (book61.pdf page 108)
+; Input as for program 5.44 (p.105): m С/П, b С/П, a С/П. Output: I in X.
+; Registers 0, A, B, C are used; the subroutine at 41 gets x in X, stores it in Ra
+; and must return f(x) in X (the book's "..." between ПА and В/О).
+; This instance uses the book's first example (p.106, table 5.4):
+; f(x) = x³/(x⁴ + 16) = "ИПА ↑ Fx² × FBx Fx² ИП8 + ÷", 16 in R8, a = 1, b = 5.
+; (A jump and its address stay on one line, so the line breaks shift after 39.)
+; Step 13 prints as a small bold "+"; the algorithm needs ÷ ((f(a) + f(b))/2).
+;
+; Book results (table 5.4): m = 16 -> 0,906642285 (sic: a doubled 6; read 0,90642285),
+; m = 64 -> 0,9073897. The emulator truncates to 8 digits and gives 0,90642272 and
+; 0,90738906; the book's digits match 8-digit rounding (0,90642285, 0,90738956).
+; @reg R8=16
+; @input 16
+; @input 5
+; @input 1
+; @expect X=0.9064228 tol=1e-6
+; @input 64
+; @input 5
+; @input 1
+; @expect X=0.9073897 tol=1e-6
+;
+00: П0 С/П ПВ ПП 41 ПС ИПВ С/П ПП 41
+10: ИПС + 2 ÷ ПС ИПВ ИПА − ИП0 ÷
+20: ПВ ИП0 1 − П0 ИПА ИПВ + ПП 41
+30: ИПС + ПС FL0 25 ИПС ИПВ × С/П БП 00
+41: ПА ИПА ↑ Fx² × FBx Fx² ИП8 + ÷
+51: В/О

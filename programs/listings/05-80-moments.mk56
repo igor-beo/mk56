@@ -1,0 +1,46 @@
+; Program 5.80: Initial and central moments, mean, variance, asymmetry and excess
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.135 (book61.pdf page 136)
+; m_k = (1/N) sum x^k; M2 = m2 − m1², M3 = m3 − 3m1m2 + 2m1³,
+; M4 = m4 − 4m1m3 + 6m1²m2 − 3m1⁴; D = M2, A = M3/M2^(3/2), E = M4/M2² − 3.
+; Input: N in R0 and Ra, R1..R6 cleared. В/О С/П shows 0, then key each x_i and С/П.
+; Output: after the last x_i: mean in X; С/П: D; С/П: A; С/П: E.
+; m1..m4 stay in R1..R4, M2, M3, M4 in Rb, Rc, Rd.
+;
+; Book example: N = 10, x = 9, 8, 10, 9, 11, 12, 10, 10, 9, 11
+;   -> mean 9,9, D = 1,29, A = 0,19656579, E = −0,752539
+; E comes from M4 = m4 − 4m1m3 + 6m1²m2 − 3m1⁴, where terms near 10^4 cancel to 3,74,
+; so it carries only ~3 good digits. The exact E of the data is −0,7539210; this emulator
+; (8-digit truncation) gives −0,7537408, the book prints −0,752539; the gap is
+; last-digit rounding in steps 62-81. Checked with tol=3e-3 for that reason.
+; (The book also forms D0 = D·N/(N−1) = 1,4333333 by hand between D and A.)
+; @reg R0=10 Ra=10
+; @run
+; @expect X=0
+; @input 9
+; @input 8
+; @input 10
+; @input 9
+; @input 11
+; @input 12
+; @input 10
+; @input 10
+; @input 9
+; @input 11
+; @expect X=9.9
+; @run
+; @expect X=1.29
+; @run
+; @expect X=0.19656579
+; @run
+; @expect X=-0.752539 tol=3e-3
+;
+00: ИП6 С/П П6 ИП1 + П1 ИП6 Fx² ИП2 +
+10: П2 ИП6 Fx² ИП6 × ИП3 + П3 ИП6 Fx²
+20: Fx² ИП4 + П4 FL0 00 ИП1 ИПa ÷ П1
+30: С/П ИП2 ИПa ÷ П2 ИП3 ИПa ÷ П3 ИП4
+40: ИПa ÷ П4 ИП2 ИП1 Fx² − Пb С/П ИП1
+50: Fx² 2 × ИП2 3 × − ИП1 × ИП3
+60: + Пc ИП2 2 × ИП1 Fx² − ИП1 ×
+70: 3 × 4 ÷ ИП3 − ИП1 × 4 ×
+80: ИП4 + Пd ИПc ИПb В↑ Fx² × F√ ÷
+90: С/П ИПd ИПb Fx² ÷ 3 − С/П

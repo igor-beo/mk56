@@ -1,0 +1,15 @@
+; Program 6.32: Probability integral Φ(y) for y > 4 by the asymptotic expansion (6.19):
+;   Φ(y) = 1 − (exp(−y²/2)/y)·sqrt(2/π)·(1 − 1/y² + 1·3/y⁴ − ...)  (three terms used)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.167-168 (book61.pdf pages 168-169)
+; Input: y in X.  Output: Φ(y) in X.
+; Step 05 is printed as a small bold "+"; it is ÷ (−y²/2 is needed for Feˣ, and
+; only ÷ reproduces the book's example).
+;
+; Book example: Φ(4) = 0,9999365 (10 s)
+; @input 4
+; @expect X=0.9999365
+;
+00: П9 Fx² П8 2 /-/ ÷ Feˣ 2 Fπ ÷
+10: F√ × ИП9 ÷ П9 3 ИП8 ÷ 1 ↔
+20: − ИП8 ÷ 1 − ИП9 × 1 + С/П
+30: БП 00

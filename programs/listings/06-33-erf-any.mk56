@@ -1,0 +1,22 @@
+; Program 6.33: Probability integral Φ(y) for any y >= 0: the series (6.18) for
+;   y < 4 (as in program 6.31) and the asymptotic expansion (6.19) for y >= 4
+;   (as in program 6.32, with R6 in place of R8)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.168 (book61.pdf page 169)
+; Input: y in X.  Output: Φ(y) in X.
+; П(x) follows from (6.17): Φ(x) ↑ 1 + 2 ÷  (the book gives П(0,1) = 0,53982785).
+;
+; Book examples: Φ(0,1) = 0,079655675; Φ(4) = 0,9999365
+; @input 0.1
+; @expect X=0.079655675
+; @input 4
+; @expect X=0.9999365
+;
+00: П9 4 − Fx<0 52 ИП9 Fx² 2 /-/ ÷
+10: П6 2 Fπ ÷ F√ ИП9 × П7 П8 0
+20: П4 КИП4 ИП4 2 × 1 + П5 ИП4 2
+30: × 1 − ИП6 × ИП4 ÷ ИП5 ÷ ИП7
+40: × П7 ИП8 + П8 FBx − Fx=0 21 ИП8
+50: БП 81 ИП9 Fx² П6 2 /-/ ÷ Feˣ 2
+60: Fπ ÷ F√ × ИП9 ÷ П9 3 ИП6 ÷
+70: 1 ↔ − ИП6 ÷ 1 − ИП9 × 1
+80: + С/П БП 00

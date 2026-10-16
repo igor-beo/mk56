@@ -9,7 +9,7 @@
  *   ; @input 5                 key 5 into X, press С/П, run until stop
  *   ; @run                     press С/П without new input
  *   ; @expect X=416.6914       check X / Y / Z / T / R0-Rd
- *   ; @expect R1=0.5 tol=1e-5  relative tolerance (default 1e-6)
+ *   ; @expect R1=0.5 tol=1e-5  tolerance (default 1e-6), times max(1, |v|)
  *   ; @expect error            expect ЕГГОГ
  *   ; @reset                   clear stack and registers, PC = 00
  *   ; @xfail reason            known failure: reported, does not fail the run

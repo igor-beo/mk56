@@ -1,0 +1,34 @@
+; Program 5.89: Least-squares line y = b0 + b1·x
+;   b1 = (sum x sum y − N sum xy)/((sum x)² − N sum x²), b0 = (sum y − b1 sum x)/N
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.140 (book61.pdf page 141)
+; Input: N in X, В/О С/П (shows i = 1), then x_i С/П (shows x_i), y_i С/П (shows i+1), ...
+; Output: after y_N: b1 in X (also Ra); С/П: b0 in X (also Rb).
+; Sums: x R4, y R6, x² R5, xy R7.
+;
+; Book example: N = 5, y(x) = 5,5(2), 6,3(4), 7,2(6), 8(8), 8,6(10)
+;   -> b1 = 0,395, b0 = 4,75
+; @input 5
+; @expect X=1
+; @input 2
+; @expect X=2
+; @input 5.5
+; @expect X=2
+; @input 4
+; @input 6.3
+; @input 6
+; @input 7.2
+; @input 8
+; @input 8
+; @input 10
+; @input 8.6
+; @expect X=0.395
+; @run
+; @expect X=4.75
+;
+00: П1 П0 0 П4 П5 П6 П7 ИП1 ИП0 −
+10: 1 + С/П П2 С/П П3 ИП6 + П6 ИП2
+20: ИП4 + П4 ИП2 Fx² ИП5 + П5 ИП2 ИП3
+30: × ИП7 + П7 FL0 07 ИП4 Fx² ИП1 ИП5
+40: × − П8 ИП4 ИП6 × ИП1 ИП7 × −
+50: ИП8 ÷ Пa С/П ИП6 ИПa ИП4 × − ИП1
+60: ÷ Пb С/П

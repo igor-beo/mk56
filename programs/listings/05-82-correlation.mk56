@@ -1,0 +1,30 @@
+; Program 5.82: Sample correlation coefficient
+;   r = (sum XY − sum X sum Y/N) / sqrt((sum X² − (sum X)²/N)(sum Y² − (sum Y)²/N))
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.136 (book61.pdf page 137)
+; Input: N in X, В/О С/П (shows 0), then X1 С/П (shows X1), Y1 С/П, ..., XN С/П, YN С/П.
+; Output: r in X (also in R2). Sums: X R7, X² R6, Y R5, Y² R4, XY R3.
+;
+; Book example: N = 5, Y(X) = 2(0,95), 4,05(2,1), 5,8(3), 8,1(4,1), 9,2(4,9)
+;   -> r = 0,99872802
+; @input 5
+; @expect X=0
+; @input 0.95
+; @expect X=0.95
+; @input 2
+; @input 2.1
+; @input 4.05
+; @input 3
+; @input 5.8
+; @input 4.1
+; @input 8.1
+; @input 4.9
+; @input 9.2
+; @expect X=0.99872802
+;
+00: П0 П1 0 П3 П4 П5 П6 П7 П9 ИП9
+10: С/П П8 ИП7 + П7 ИП8 Fx² ИП6 + П6
+20: ИП8 С/П П9 ИП5 + П5 ИП9 Fx² ИП4 +
+30: П4 ИП8 ИП9 × ИП3 + П3 FL0 09 ИП6
+40: ИП7 Fx² ИП1 ÷ − ИП4 ИП5 Fx² ИП1 ÷
+50: − × F√ П2 ИП3 ИП7 ИП5 × ИП1 ÷
+60: − ИП2 ÷ П2 С/П БП 00

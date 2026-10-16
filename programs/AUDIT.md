@@ -5,7 +5,9 @@
 **Status (after the audit):** all 45 listings are run by `make test` on the
 real assembler and emulator. 44 reproduce the book's results. 5.16 is a known
 failure (`@xfail`): it stops only when a Newton correction is exactly zero,
-and that depends on the real chip's sin digits.
+and that depends on the real chip's sin digits. The 18 NOT-FOUND entries were
+then replaced by 27 programs transcribed from the book; see
+[Transcriptions that replace the NOT-FOUND entries](#transcriptions-that-replace-the-not-found-entries).
 
 **Method:** each listing was read from page images rendered at 260–400 dpi, not from the OCR layer, which mangles key names and digits. Each `.mk56` listing was then run through a scratch simulator of the ISA doc semantics (§2–3) with the book's worked example. All listings reproduce the book's printed results except 5.16; the reason is explained below. The simulator is scratch work only. The repo emulator and assembler were not built or run.
 **Output:** 45 listings in `programs/listings/*.mk56`, covering 43 audited entries. The sinc example and 5.32 each have two listings.
@@ -127,7 +129,48 @@ Step numbers are 2-digit addresses in the corrected listing.
 
 Quadratic equation, Newton-Raphson (generic), Trapezoidal integration and Bisection are in `05-numerical-methods.md`. Combinations, Permutations, Efficient combinations and Double factorial are in `06-factorial-combinatorics.md`. Transistor h-parameters, Rectifier, Small-signal amplifier stages and RC/RL time constants are in `07-scientific-engineering.md`. Statistical moments, Mean and variance, Linear regression, Correlation, Normal distribution and Monte Carlo are in `08-statistics-sequences.md`.
 
-None of these is a book transcription. They are pseudo-code outlines in a non-МК-56 notation (`x→П`, `П→x`, `√x`, `x²`, `/~/`), have unresolved `XX` jump targets, use an operator that does not exist (`Fx>0`), or have no listing at all. A rewrite should either delete them or replace them with the book programs listed in the table. The book programs would then need the same image-based transcription and simulation used here. The rewrite should also drop the claim in `08-statistics-sequences.md` that the МК-56 lacks a random-number generator. The claim is true, but the book provides generator programs (5.85–5.88).
+None of these is a book transcription. They are pseudo-code outlines in a non-МК-56 notation (`x→П`, `П→x`, `√x`, `x²`, `/~/`), have unresolved `XX` jump targets, use an operator that does not exist (`Fx>0`), or have no listing at all. They were deleted and replaced with the book programs listed in the table (next section). The old claim in `08-statistics-sequences.md` that the МК-56 lacks a random-number generator was dropped with the file: the claim is true, but the book provides generator programs (5.85–5.88), now in the library.
+
+## Transcriptions that replace the NOT-FOUND entries
+
+Method as above: listings read from page images at 300–600 dpi, every ÷/+ glyph decided by the formula, and every program run on the repo's assembler and emulator against the book's worked example. All 27 pass. The book has no double-factorial program (pp.61–62 hold only 3.15–3.19), so that entry has no replacement; "Efficient combinations" is covered by 3.19.
+
+| Replaces | Book programs | Listings |
+|---|---|---|
+| Combinations, Permutations, Efficient combinations | 3.19 (p.62) | 03-19-combinations.mk56 |
+| Bisection | 5.22 (p.92) | 05-22-bisection.mk56 |
+| Quadratic equation | 5.29, 5.30 (p.97–98) | 05-29-quadratic.mk56, 05-30-quadratic-precise.mk56 |
+| Newton-Raphson (generic) | 5.16, 5.17 (already in the library) | — |
+| Trapezoidal integration | 5.46, 5.47 Simpson (p.107) | 05-46-trapezoid.mk56, 05-47-simpson.mk56 |
+| RC/RL time constants | 5.67 (p.118) | 05-67-rc-circuit.mk56 |
+| Statistical moments, Mean and variance | 5.80, 5.81 (p.135–136) | 05-80-moments.mk56, 05-81-u3-u4.mk56 |
+| Correlation coefficient | 5.82 (p.136) | 05-82-correlation.mk56 |
+| Monte Carlo | 5.85–5.88 (p.138–139) | 05-85-random.mk56 … 05-88-random-normal.mk56 |
+| Linear regression | 5.89 (p.140) | 05-89-regression.mk56 |
+| Normal distribution | 6.31–6.36 (p.167–169) | 06-31-erf-series.mk56 … 06-36-erf-approx5.mk56 |
+| Rectifier | 7.28 (p.190) | 07-28-rectifier.mk56 |
+| Transistor h-parameters | 7.29, 7.30 (p.191–193) | 07-29-…, 07-30-… |
+| Small-signal amplifier stages | 7.31–7.33 (p.194–195) | 07-31-…, 07-32-…, 07-33-… |
+
+6.31–6.36 compute the probability integral, not the density; the density ψ(x) is program 6.37 (p.169–170), not transcribed.
+
+**÷ printed as a small bold "+"** (each decided by the formula and the example): 3.19/18, /21; 5.22/02, /08; 5.30/27; 5.46/13; 5.82/43, /49, /59; 6.32/05; 7.28/04, /89, /93; 7.29/13, /20; 7.32/56; 7.33/39. 5.89/49 prints as "−" with a stray dot and is −.
+
+**Misprints in the book** (the listing is transcribed as printed; the test follows the program):
+- **5.29, p.98:** x₂ = −6,66666666·10⁻⁴ for 3x² + 20000x + 12 cannot come from 8-digit arithmetic, where p + √D is a multiple of 10⁻⁴. That check is left out (5.30 exists to fix exactly this case).
+- **5.30:** the text gives x₂ = −a₀/(x₁a₂); the program correctly computes +a₀/(a₂x₁).
+- **5.46, table 5.4:** "0,906642285" has a doubled 6; read as 0,90642285.
+- **6.31:** the printed Φ(4) = 0,99993495 is the series' rounding error (exact 0,99993666) and is not tested.
+- **6.34:** the text gives Φ(−x) = 1 − Φ(x); erf is odd, so Φ(−x) = −Φ(x).
+- **7.32:** the printed Rвых formula has (a·rк + rэ); the listing computes (a·rк − rэ), and only that reproduces 37217,544.
+- **7.33:** K_I is printed as 48,421071; the formula and the listing give 48,721071.
+- **7.31–7.33:** both R4 and R5 are labelled "Rн". R4 is the source resistance Rи, R5 the load.
+
+**Precision observations** (no emulator change; recorded for the chip-level work in the README's Future work):
+- At m = 64, 5.46 and 5.47 differ from the book by 6–7·10⁻⁷ relative. A Python model with 8-digit truncation reproduces the emulator exactly; 8-digit *rounding* lands closer to the book (trapezoid 0,90738956 vs printed 0,9073897; emulator 0,90738906).
+- 5.86's third output: emulator 0,493815, book 0,493816; the underlying sum 13,4938156 truncates to the former and rounds to the latter.
+- 5.82 r and 5.88 differ in the 8th digit; 5.80's excess E cancels terms near 10⁴ and agrees to about 3 digits (tolerance 3e-3).
+- The manual itself shows truncation for F1/x (1/560 gives 1,7857142 -03 in the parallel-resistor example, [ch.5](../docs/manual/05-automatic-mode.md)), so if the book's machine rounded anywhere it was in other operations. Only the real microcode can settle this.
 
 ## Findings that bear on emulator semantics (ISA doc §2–3)
 

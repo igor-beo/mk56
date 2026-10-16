@@ -66,6 +66,19 @@ such case is marked in the source. Transcendental functions are computed in
 IEEE double and then truncated to 8 digits. They can differ from the real
 chip in the last digit or two, which is within the manual's stated accuracy.
 
+## Future work
+
+**Chip-level emulation.** The schematic ([`pr2.bmp`](references/pr2.bmp))
+shows К145ИК1302 and К145ИК1303 processors with КР145ИР2 registers. These
+appear to be the same chips as in the Б3-34, and other projects have emulated
+those chips at microcode level. If the identification holds, running the
+chips' own microcode would reproduce the real machine's digits exactly,
+including the transcendental functions. That would turn program 5.16, which
+now loops forever (see [programs/AUDIT.md](programs/AUDIT.md)), into a
+passing test. This needs a new arithmetic core, so it is a separate project.
+The chip identification and the availability of ROM dumps are not yet
+verified.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).
