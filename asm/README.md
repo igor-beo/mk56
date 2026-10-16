@@ -1,71 +1,51 @@
 # MK56-ASM Language
 
-Assembly language specification and examples for the MK-56 programmable calculator.
-
-## Contents
+Assembly language for the МК-56, and the original listing notation.
 
 | File | Description |
 |------|-------------|
-| [MK56-ASM-SPEC.md](MK56-ASM-SPEC.md) | Complete language specification |
-| [INSTRUCTION-SET.md](INSTRUCTION-SET.md) | Quick reference card |
-| [examples/](examples/) | Example programs |
+| [MK56-ASM-SPEC.md](MK56-ASM-SPEC.md) | Language specification: syntax, listing notation, test directives |
+| [INSTRUCTION-SET.md](INSTRUCTION-SET.md) | Every machine code, generated from the shared opcode table |
+| [examples/](examples/) | Example programs with tests |
 
-## Quick Reference
+## The same program, two ways
 
-### Instruction Categories
-
-| Category | Instructions |
-|----------|--------------|
-| **Stack** | `ENTER`, `SWAP`, `CLX`, `ROLLDOWN`, `ROLLUP` |
-| **Arithmetic** | `ADD`, `SUB`, `MUL`, `DIV`, `CHS` |
-| **Math** | `SQ`, `SQRT`, `INV`, `POW`, `EXP`, `LN`, `LOG`, `SIN`, `COS`, `PI` |
-| **Memory** | `STO Rn`, `RCL Rn`, `STO+ Rn`, `STO- Rn` |
-| **Flow** | `JMP`, `JGE`, `JLT`, `CALL`, `RTN`, `HALT` |
-
-### Example
+MK56-ASM (`factorial.asm`):
 
 ```asm
-; factorial.asm - Calculate n!
-; Input: n in X
-; Output: n! in X
-
-        STO R0          ; R0 = counter
+; @input 5
+; @expect X=120
+        STO R0          ; R0 = n
         1
         STO R1          ; R1 = result
-
-loop:   RCL R0
-        1
-        SUB
-        JLT done
-        STO R0
-        RCL R1
+loop:   RCL R1
         RCL R0
-        1
-        ADD
         MUL
         STO R1
-        JMP loop
-
-done:   RCL R1
+        LOOP0 loop      ; R0 - 1, repeat while not zero
+        RCL R1
         HALT
-
-.END
 ```
 
-## Tools
+Original listing (`factorial.mk56`):
 
-- **Assembler**: `../assembler/` - Compiles `.asm` to `.bin`
-- **Emulator**: `../emulator/` - Runs `.bin` files
+```
+; @input 5
+; @expect X=120
+00: П0 1 П1
+03: ИП1 ИП0 × П1 FL0 03
+09: ИП1 С/П
+```
 
-## Testing Examples
+Both assemble to the same 11 steps:
+`40 01 41 61 60 12 41 5D 03 61 50`.
+
+## Running
 
 ```bash
-# From project root
-./assembler/mk56asm asm/examples/factorial.asm -o factorial.bin
-./emulator/mk56emu factorial.bin -c -i 5    # Result: 120
+make                                          # from the project root
+./emulator/mk56emu asm/examples/factorial.asm -c -i 5   # Display: 120,
+./emulator/mk56emu asm/examples/factorial.asm           # TUI
+./assembler/mk56asm asm/examples/factorial.asm -l factorial.lst
+make test                                     # all programs with @expect
 ```
-
-## Related Documentation
-
-- [Device Documentation](../docs/) - Complete MK-56 technical documentation
-- [Program Library](../programs/) - Mathematical programs from Dyakonov's reference

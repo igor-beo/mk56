@@ -1,451 +1,185 @@
 # MK56-ASM Language Specification
 
-**Version**: 1.0.0  
-**Target**: MK-56 "Elektronika" Programmable Calculator  
-**Authors**: Winston (Architect), Amelia (Developer)  
-**Date**: 2025-12-10
+**Version**: 2.0
+**Target**: Электроника МК-56 programmable calculator (Б3-34 instruction set)
+
+MK56-ASM gives the МК-56's instructions ASCII names, labels and number
+literals. It assembles to the real machine codes, one byte per program step.
+The assembler also reads programs in the **original listing notation** used
+by Soviet manuals and magazines, so a listing can be typed in as printed.
+
+See [INSTRUCTION-SET.md](INSTRUCTION-SET.md) for every code.
 
 ---
 
-## 1. Overview
+## 1. The machine
 
-MK56-ASM is an assembly language for the MK-56 programmable calculator. It provides human-readable ASCII mnemonics that map directly to the calculator's native RPN (Reverse Polish Notation) instruction set.
+| Component | Specification | Manual |
+|-----------|---------------|--------|
+| Program memory | 98 steps, addresses 00–97 | p.7, p.50 |
+| Registers | 14: R0–R9, Ra, Rb, Rc, Rd | p.48 |
+| Stack | X, Y, Z, T, plus the previous-result register X1 | p.34, p.43 |
+| Return stack | 5 levels | p.56 |
+| Numbers | 8-digit mantissa (results truncated), exponent ±99 | p.5, p.29 |
+| Angles | switch: radians, degrees, grads | p.25 |
 
-### 1.1 Design Goals
+Things that surprise people coming from other RPN machines:
 
-1. **1:1 Mapping** - Each mnemonic corresponds to exactly one calculator keystroke/operation
-2. **ASCII-Only** - No Cyrillic or special Unicode required
-3. **Readable** - Clear, self-documenting instruction names
-4. **Parseable** - Simple, unambiguous grammar for assembler/emulator
-5. **Testable** - Support for assertions and debugging
-
-### 1.2 Calculator Architecture
-
-| Component | Specification |
-|-----------|---------------|
-| Program Memory | 105 steps (addresses 00-104) |
-| Data Registers | 14 registers (R0-R9, RA, RB, RC, RD) |
-| Stack | 4 levels (X, Y, Z, T) - RPN stack |
-| Display | 8-digit mantissa, 2-digit exponent |
-| Number Range | ±1×10⁻⁹⁹ to ±9.9999999×10⁹⁹ |
+- **Conditionals jump when the condition fails.** `Fx<0 12` continues with the
+  next step if X < 0 and jumps to 12 otherwise (p.65). MK56-ASM names the case
+  that jumps, so `JGE 12` assembles to `Fx<0 12`.
+- **`xʸ` uses X as the base and Y as the exponent** (p.28).
+- **Numbers are keystrokes.** `25` is two steps, `2` and `5`. Two numbers in a
+  row merge into one unless something separates them, usually `ENTER`.
+- **`ВП` is exponent entry**, not Enter. Enter is `В↑`.
+- **Indirect addressing modifies the register first**: R0–R3 count down,
+  R4–R6 count up, R7–Rd stay as they are (p.67).
 
 ---
 
-## 2. Syntax
+## 2. MK56-ASM syntax
 
-### 2.1 General Format
+One instruction per line:
 
 ```
-[label:] [INSTRUCTION [operand]] [; comment]
+[label:] [instruction [operand]] [; comment]
 ```
-
-- **Labels**: Optional, end with colon, define jump targets
-- **Instructions**: Single mnemonic per line
-- **Operands**: Register names, addresses, or numeric literals
-- **Comments**: Start with `;` or `//`, continue to end of line
-
-### 2.2 Examples
 
 ```asm
-; This is a comment
-start:          ; This is a label
-        ENTER           ; Push X to stack
-        STO R0          ; Store X to register 0
-        JMP loop        ; Jump to label 'loop'
-        42              ; Push numeric literal
-        3.14159         ; Push floating-point literal
-```
-
-### 2.3 Case Sensitivity
-
-- **Instructions**: Case-insensitive (`ENTER`, `Enter`, `enter` are equivalent)
-- **Labels**: Case-sensitive (`Loop` ≠ `loop`)
-- **Registers**: Case-insensitive (`R0`, `r0`, `RA`, `ra` are equivalent)
-
-### 2.4 Numeric Literals
-
-| Format | Example | Description |
-|--------|---------|-------------|
-| Integer | `42` | Pushed to X register |
-| Decimal | `3.14159` | Floating-point literal |
-| Scientific | `1.5e-3` | 1.5 × 10⁻³ |
-| Negative | `-7.5` | Negative number |
-
-### 2.5 Whitespace
-
-- Leading/trailing whitespace ignored
-- Multiple spaces treated as single separator
-- Blank lines ignored
-- Tab characters equivalent to spaces
-
----
-
-## 3. Instruction Set
-
-### 3.1 Stack Operations
-
-| Mnemonic | Keystroke | Description | Stack Effect |
-|----------|-----------|-------------|--------------|
-| `ENTER` | [ВП] | Push X to stack | T←Z, Z←Y, Y←X |
-| `SWAP` | [↔] | Exchange X and Y | X↔Y |
-| `CLX` | [СХ] | Clear X register | X←0 |
-| `ROLLDOWN` | [↓] | Roll stack down | X←Y←Z←T←X |
-| `ROLLUP` | [↑] | Roll stack up | T←Z←Y←X←T |
-
-### 3.2 Arithmetic Operations
-
-| Mnemonic | Keystroke | Description | Operation |
-|----------|-----------|-------------|-----------|
-| `ADD` | [+] | Addition | X ← Y + X, drop |
-| `SUB` | [−] | Subtraction | X ← Y - X, drop |
-| `MUL` | [×] | Multiplication | X ← Y × X, drop |
-| `DIV` | [÷] | Division | X ← Y ÷ X, drop |
-| `CHS` | [/~/] | Change sign | X ← -X |
-
-### 3.3 Mathematical Functions
-
-| Mnemonic | Keystroke | Description | Domain |
-|----------|-----------|-------------|--------|
-| `SQ` | [x²] | Square | X ← X² |
-| `SQRT` | [√x] | Square root | X ≥ 0 |
-| `INV` | [1/x] | Reciprocal | X ≠ 0 |
-| `POW` | [xʸ] | Power | X ← Y^X |
-| `EXP` | [Г][eˣ] | Exponential | X ← e^X |
-| `EXP10` | [Г][10ˣ] | Power of 10 | X ← 10^X |
-| `LN` | [Г][ln] | Natural log | X > 0 |
-| `LOG` | [Г][lg] | Log base 10 | X > 0 |
-| `SIN` | [Г][sin] | Sine (radians) | any |
-| `COS` | [Г][cos] | Cosine (radians) | any |
-| `PI` | [π] | Push π | X ← 3.1415927 |
-
-### 3.4 Memory Operations
-
-| Mnemonic | Keystroke | Description | Example |
-|----------|-----------|-------------|---------|
-| `STO Rn` | [x→П][n] | Store X to register | `STO R0` |
-| `RCL Rn` | [П→x][n] | Recall register to X | `RCL R5` |
-| `STO+ Rn` | [П][+][n] | Add X to register | `STO+ R0` |
-| `STO- Rn` | [П][−][n] | Subtract X from register | `STO- R1` |
-
-**Register Names**:
-- `R0` through `R9` - Registers 0-9
-- `RA`, `RB`, `RC`, `RD` - Registers 10-13
-
-### 3.5 Program Flow Control
-
-| Mnemonic | Keystroke | Description | Example |
-|----------|-----------|-------------|---------|
-| `JMP addr` | [БП][nn] | Unconditional jump | `JMP 25`, `JMP loop` |
-| `JGE addr` | [x≥0][nn] | Jump if X ≥ 0 | `JGE done` |
-| `JLT addr` | [x<0][nn] | Jump if X < 0 | `JLT negative` |
-| `CALL addr` | [В/О][nn] | Call subroutine | `CALL sqrt_sub` |
-| `RTN` | [В/О] | Return from subroutine | `RTN` |
-| `HALT` | [С/П] | Stop/pause program | `HALT` |
-| `NOP` | - | No operation | `NOP` |
-
-### 3.6 Data Entry (Numeric Literals)
-
-Numbers can be entered directly as instructions:
-
-```asm
-        42              ; Push integer 42 to X
-        3.14159         ; Push pi approximation
-        -273.15         ; Push negative number
-        6.022e23        ; Avogadro's number in scientific notation
-```
-
----
-
-## 4. Addressing Modes
-
-### 4.1 Direct Addressing
-
-Jump/call to specific address (00-104):
-
-```asm
-        JMP 25          ; Jump to address 25
-        CALL 50         ; Call subroutine at address 50
-```
-
-### 4.2 Label Addressing
-
-Jump/call to labeled location:
-
-```asm
-loop:   RCL R0
-        1
-        SUB
-        STO R0
-        JGE loop        ; Jump to 'loop' label if X ≥ 0
-```
-
-### 4.3 Register Addressing
-
-Access registers by name:
-
-```asm
-        STO R0          ; Store to register 0
-        STO RA          ; Store to register 10 (A)
-        RCL RD          ; Recall from register 13 (D)
-```
-
----
-
-## 5. Assembler Directives
-
-Directives control assembly but don't generate code:
-
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `.ORG addr` | Set origin address | `.ORG 50` |
-| `.EQU name value` | Define constant | `.EQU PI 3.14159` |
-| `.END` | End of program | `.END` |
-
-### 5.1 Testing/Debug Directives (Emulator Only)
-
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `.ASSERT condition` | Verify condition | `.ASSERT X == 1.5` |
-| `.TRACE` | Dump registers/stack | `.TRACE` |
-| `.BREAK` | Breakpoint | `.BREAK` |
-| `.INPUT value` | Simulate input | `.INPUT 5.0` |
-
----
-
-## 6. Program Structure
-
-### 6.1 Minimal Program
-
-```asm
-; Minimal MK56-ASM program
-        SQ              ; Square the input
-        HALT            ; Stop and display result
-.END
-```
-
-### 6.2 Standard Program Template
-
-```asm
-; ============================================
-; Program: [Name]
-; Purpose: [Description]
-; Input:   [What goes in X, registers, etc.]
-; Output:  [What's in X when done]
-; Registers Used: [R0, R1, etc.]
-; ============================================
-
-.ORG 0
-
-start:
-        ; Program body here
-        HALT
-
-; Subroutines (if any)
-sub1:
-        ; ...
-        RTN
-
-.END
-```
-
----
-
-## 7. Instruction Encoding
-
-For emulator implementation, each instruction maps to an opcode:
-
-| Opcode | Mnemonic | Opcode | Mnemonic |
-|--------|----------|--------|----------|
-| 0x00 | NOP | 0x20 | STO R0 |
-| 0x01 | ENTER | 0x21 | STO R1 |
-| 0x02 | SWAP | ... | ... |
-| 0x03 | CLX | 0x30 | RCL R0 |
-| 0x04 | ADD | 0x31 | RCL R1 |
-| 0x05 | SUB | ... | ... |
-| 0x06 | MUL | 0x40 | JMP |
-| 0x07 | DIV | 0x41 | JGE |
-| 0x08 | CHS | 0x42 | JLT |
-| 0x10 | SQ | 0x43 | CALL |
-| 0x11 | SQRT | 0x44 | RTN |
-| 0x12 | INV | 0x45 | HALT |
-| 0x13 | EXP | 0x50 | PI |
-| 0x14 | LN | 0x60 | LITERAL |
-| 0x15 | LOG | | |
-| 0x16 | EXP10 | | |
-| 0x17 | SIN | | |
-| 0x18 | COS | | |
-| 0x19 | POW | | |
-
----
-
-## 8. Error Handling
-
-### 8.1 Assembly Errors
-
-| Error | Description |
-|-------|-------------|
-| `UNDEFINED_LABEL` | Label referenced but not defined |
-| `DUPLICATE_LABEL` | Same label defined twice |
-| `INVALID_REGISTER` | Unknown register name |
-| `ADDRESS_OUT_OF_RANGE` | Address > 104 |
-| `INVALID_INSTRUCTION` | Unknown mnemonic |
-
-### 8.2 Runtime Errors (Emulator)
-
-| Error | Description |
-|-------|-------------|
-| `DIV_BY_ZERO` | Division by zero |
-| `SQRT_NEGATIVE` | Square root of negative |
-| `LOG_DOMAIN` | Log of zero or negative |
-| `OVERFLOW` | Result > 9.9999999×10⁹⁹ |
-| `UNDERFLOW` | Result < 1×10⁻⁹⁹ |
-| `STACK_ERROR` | Invalid stack operation |
-
----
-
-## 9. Original Listing Syntax Translation
-
-This section provides a complete mapping from original Soviet calculator notation to MK56-ASM.
-
-### 9.1 Complete Translation Table
-
-| Original (Cyrillic) | Original (Symbol) | MK56-ASM | Description |
-|---------------------|-------------------|----------|-------------|
-| **Stack Operations** ||||
-| `ВП` | `↑` | `ENTER` | Push X onto stack |
-| `↔` | `XY` | `SWAP` | Exchange X and Y |
-| `СХ` | `Сх` | `CLX` | Clear X register |
-| `↓` | | `ROLLDOWN` | Roll stack down |
-| `↑` | | `ROLLUP` | Roll stack up |
-| **Arithmetic** ||||
-| `+` | | `ADD` | Addition |
-| `−` | | `SUB` | Subtraction |
-| `×` | | `MUL` | Multiplication |
-| `÷` | `/` | `DIV` | Division |
-| `/−/` | `/-/` | `CHS` | Change sign (negate) |
-| **Math Functions** ||||
-| `Fx²` | `x²` | `SQ` | Square |
-| `F√` | `√x` | `SQRT` | Square root |
-| `F1/x` | `1/x` | `INV` | Reciprocal |
-| `Fxʸ` | `xʸ` | `POW` | Power (Y^X) |
-| `Feˣ` | `eˣ` | `EXP` | Exponential (e^X) |
-| `F10ˣ` | `10ˣ` | `EXP10` | Power of 10 |
-| `Fln` | `ln` | `LN` | Natural logarithm |
-| `Flg` | `lg` | `LOG` | Logarithm base 10 |
-| `Fsin` | `sin` | `SIN` | Sine (radians) |
-| `Fcos` | `cos` | `COS` | Cosine (radians) |
-| `Fπ` | `π` | `PI` | Push π constant |
-| **Memory Operations** ||||
-| `П N` | `x→П N` | `STO Rn` | Store X to register N |
-| `ИП N` | `П→x N` | `RCL Rn` | Recall register N to X |
-| `П+ N` | | `STO+ Rn` | Add X to register N |
-| `П− N` | | `STO- Rn` | Subtract X from register N |
-| **Flow Control** ||||
-| `БП nn` | | `JMP addr` | Unconditional jump |
-| `x≥0 nn` | `Fx≥0 nn` | `JGE addr` | Jump if X ≥ 0 |
-| `x<0 nn` | `Fx<0 nn` | `JLT addr` | Jump if X < 0 |
-| `В/О nn` | `ПП nn` | `CALL addr` | Call subroutine |
-| `В/О` | | `RTN` | Return from subroutine |
-| `С/П` | | `HALT` | Stop program |
-| `НОП` | | `NOP` | No operation |
-
-### 9.2 Register Mapping
-
-| Original | MK56-ASM | Notes |
-|----------|----------|-------|
-| `П0` - `П9` | `R0` - `R9` | Registers 0-9 |
-| `ПА` / `П10` | `RA` | Register 10 (A) |
-| `ПВ` / `П11` | `RB` | Register 11 (B) |
-| `ПС` / `П12` | `RC` | Register 12 (C) |
-| `ПД` / `П13` | `RD` | Register 13 (D) |
-
-### 9.3 Example Translation
-
-**Original listing (from manual):**
-```
-00  П0      ; Store n
-01  1
-02  П1      ; result = 1
-03  ИП0
-04  1
-05  −
-06  x<0 11  ; if < 0, done
-07  П0
-08  ИП1
-09  ×
-10  БП 03
-11  ИП1
-12  С/П
-```
-
-**MK56-ASM translation:**
-```asm
-        STO R0          ; Store n
-        1
-        STO R1          ; result = 1
-loop:   RCL R0
-        1
-        SUB
-        JLT done        ; if < 0, done
-        STO R0
+; Sum 1..n, n in X
+        STO R0          ; counter
+        0
+        STO R1          ; sum
+loop:   RCL R1
+        RCL R0
+        ADD
+        STO R1
+        LOOP0 loop      ; R0 - 1, repeat while not zero
         RCL R1
-        MUL
-        JMP loop
-done:   RCL R1
         HALT
-.END
 ```
 
-### 9.4 Address Format
+- Mnemonics and register names are case-insensitive. Labels are too.
+- Comments start with `;` or `//`.
+- `NN:` (a number instead of a label) asserts that the next step is at
+  address NN, and assembly fails if it is not.
 
-| Original | MK56-ASM | Notes |
-|----------|----------|-------|
-| `БП 25` | `JMP 25` | Numeric address |
-| `БП 25` | `JMP loop` | Label reference (preferred) |
-| `В/О 50` | `CALL sub1` | Subroutine call |
+### 2.1 Operands
+
+| Form | Meaning | Example |
+|------|---------|---------|
+| `Rn` | register R0–R9, RA–RD | `STO R3`, `RCL RA` |
+| `(Rn)` | indirect through Rn | `RCL (R4)`, `JMP (R3)` |
+| `nn` | address 00–97 | `JMP 12` |
+| `label` | address of a label | `CALL sub` |
+
+### 2.2 Number literals
+
+A literal is assembled into the keystrokes that enter it:
+
+| Literal | Steps |
+|---------|-------|
+| `25` | `2 5` |
+| `9.81` | `9 , 8 1` |
+| `-3` | `3 /-/` |
+| `1.5e-3` | `1 , 5 ВП 3 /-/` |
+
+The mantissa can have at most 8 digits and the exponent at most 2.
+
+### 2.3 Instructions
+
+| Group | Mnemonics |
+|-------|-----------|
+| Entry | `CHS`, `EEX`, `CLX`, `ENTER`, `LASTX`, `.` |
+| Arithmetic | `ADD`, `SUB`, `MUL`, `DIV`, `SWAP`, `ROT` |
+| Functions | `SQ`, `SQRT`, `INV`, `POW`, `EXP`, `EXP10`, `LN`, `LOG`, `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `PI` |
+| Registers | `STO Rn`, `RCL Rn`, `STO (Rn)`, `RCL (Rn)` |
+| Control | `JMP`, `CALL`, `RTN`, `HALT`, `NOP` |
+| Conditional | `JZ`, `JNZ`, `JLT`, `JGE` (each also as `(Rn)`) |
+| Loops | `LOOP0`–`LOOP3` |
+
+Aliases: `GOTO` = `JMP`, `STOP` = `HALT`, `RETURN` = `RTN`,
+`ROLLDOWN` = `ROT`. A line may also use original notation, for example
+`Fx²` or `БП 12`.
 
 ---
 
-## 10. Related Documents
+## 3. Listing syntax (`.mk56` files)
 
-- [INSTRUCTION-SET.md](INSTRUCTION-SET.md) - Quick reference card
-- [examples/](examples/) - Translated example programs
-- [../docs/16-programming-commands.md](../docs/16-programming-commands.md) - Original MK-56 commands
-- [../programs/](../programs/) - Original B3-34 style programs
+Files ending in `.mk56`, or any source after a `.LISTING` directive, use the
+notation of printed listings: many steps per line, separated by spaces.
+
+```
+; Manual table 5: circle area, d in R2
+00: ИП2 Fx² В↑ Fπ × 4 ÷ С/П
+```
+
+- Each token is one step. The token after `БП`, `ПП`, a conditional or a
+  loop is its two-digit address: `Fx≠0 13`, `FL0 02`.
+- A number token outside that position is entered digit by digit: `100` is
+  `1 0 0`, and `9,81` is `9 , 8 1`.
+- `NN:` asserts the address of the next step. Start every line with one, so
+  that a skipped or doubled step stops the assembly.
+- Cyrillic and Latin lookalikes are interchangeable (`С/П`, `C/П`), and so
+  are the common spellings of each key:
+
+| Key | Accepted spellings |
+|-----|--------------------|
+| x→П n | `П3`, `x→П 3`, `x->П3` |
+| П→x n | `ИП3`, `ИП 3`, `П→x 3` |
+| В↑ | `В↑`, `↑` |
+| ↔ | `↔`, `XY` |
+| F-functions | `Fx²`, `F x²`, `x²`, `Fx^2`; `F√`, `Fsqrt`; `Fxʸ`, `Fx^y` |
+| F⟳ | `F⟳`, `F,` |
+| conditionals | `Fx≠0`, `x≠0`, `Fx!=0`; `Fx≥0`, `Fx>=0` |
+| indirect | `КИП3`, `К ИП 3`, `КП→x 3`; `КБП3`; `Кx≠03` |
+| registers a–d | Latin `a b c d` or Cyrillic `а в с д` |
 
 ---
 
-## Appendix A: Complete Instruction List (Alphabetical)
+## 4. Directives
+
+| Directive | Meaning |
+|-----------|---------|
+| `.ORG nn` | Continue at address nn |
+| `.LISTING` / `.ASM` | Switch syntax |
+| `.STEP 5F` | Emit a raw code (hex) |
+| `.END` | Ignore the rest of the file |
+
+`.EQU`, `.ASSERT`, `.TRACE` and `.BREAK` are accepted and ignored.
+
+### 4.1 Test directives
+
+Test directives sit in comments. `mk56test` runs them (see
+[tests/](../tests/)):
+
+```asm
+; @input 1
+; @expect X=1.1752012
+```
+
+| Directive | Meaning |
+|-----------|---------|
+| `@angle rad\|deg\|grad` | Angle switch |
+| `@reg R0=5 Ra=12` | Set registers |
+| `@stack X=10 Y=30` | Set stack registers |
+| `@start nn` | Set the program counter |
+| `@input v` | Key v into X, press С/П, run until stop |
+| `@run` | Press С/П without input |
+| `@expect X=v [tol=1e-5]` | Check X, Y, Z, T or a register. The relative tolerance defaults to 1e-6 |
+| `@expect error` | Expect ЕГГОГ |
+| `@reset` | Clear stack and registers, PC = 00 |
+
+---
+
+## 5. Output
+
+The assembler writes a raw binary of one byte per step (up to 98 bytes).
+`-l file` adds a listing with addresses, codes, original notation and source:
 
 ```
-ADD     - Addition (Y + X → X)
-CALL    - Call subroutine
-CHS     - Change sign
-CLX     - Clear X register
-COS     - Cosine
-DIV     - Division (Y ÷ X → X)
-ENTER   - Push X to stack
-EXP     - Exponential (e^X)
-EXP10   - Power of 10 (10^X)
-HALT    - Stop program
-INV     - Reciprocal (1/X)
-JGE     - Jump if X ≥ 0
-JLT     - Jump if X < 0
-JMP     - Unconditional jump
-LN      - Natural logarithm
-LOG     - Logarithm base 10
-MUL     - Multiplication (Y × X → X)
-NOP     - No operation
-PI      - Push π constant
-POW     - Power (Y^X → X)
-RCL     - Recall from register
-RTN     - Return from subroutine
-SIN     - Sine
-SQ      - Square (X² → X)
-SQRT    - Square root
-STO     - Store to register
-STO+    - Add to register
-STO-    - Subtract from register
-SUB     - Subtraction (Y - X → X)
-SWAP    - Exchange X and Y
+ADDR  CODES             KEYS                      SOURCE
+00    62 22 0E 20 12 04 13 50  ИП2 Fx² В↑ Fπ × 4 ÷ С/П   00: ИП2 Fx² В↑ Fπ × 4 ÷ С/П
 ```
+
+The emulator loads `.bin`, `.asm` and `.mk56` files directly.

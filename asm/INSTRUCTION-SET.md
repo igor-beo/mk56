@@ -1,120 +1,108 @@
-# MK56-ASM Instruction Set Quick Reference
+# MK-56 Instruction Set
 
-## Stack Operations
+The real machine codes of the Электроника МК-56, as listed in Table 4 of the
+original manual (p.51–55; see the [translation](../docs/manual/06-programming-mode.md)).
+Every program step is one code; jumps, calls, conditionals and loops are
+followed by a second step holding a two-digit address (`БП 42` = `51 42`).
 
-| Mnemonic | Description | Before | After |
-|----------|-------------|--------|-------|
-| `ENTER` | Push X to stack | T Z Y **X** | X **X** Y Z |
-| `SWAP` | Exchange X, Y | T Z **Y** **X** | T Z **X** **Y** |
-| `CLX` | Clear X | T Z Y **X** | T Z Y **0** |
-| `ROLLDOWN` | Roll down | **T** Z Y X | X **T** Z Y |
-| `ROLLUP` | Roll up | T Z Y **X** | Z Y X **T** |
+This table is generated from [`common/mk56_isa.c`](../common/mk56_isa.c), the
+single opcode table used by the assembler, the emulator and the TUI.
 
-## Arithmetic
+**Conventions.** *X1* is the previous-result register (recalled with F Bx).
+One- and two-operand operations copy the old X into X1. Conditional jumps on
+the МК-56 jump when the condition **fails** (manual p.65), so `Fx≥0 nn` jumps
+when X < 0; the MK56-ASM mnemonic names the case in which the jump happens.
 
-| Mnemonic | Operation | Stack Effect |
-|----------|-----------|--------------|
-| `ADD` | Y + X → X | T T Z result |
-| `SUB` | Y - X → X | T T Z result |
-| `MUL` | Y × X → X | T T Z result |
-| `DIV` | Y ÷ X → X | T T Z result |
-| `CHS` | -X → X | unchanged except X |
+## Codes
 
-## Math Functions
+| Code | Keys | MK56-ASM | Operation |
+|------|------|----------|-----------|
+| `00` | `0` | `0` | Digit (number entry) |
+| `01` | `1` | `1` | Digit (number entry) |
+| `02` | `2` | `2` | Digit (number entry) |
+| `03` | `3` | `3` | Digit (number entry) |
+| `04` | `4` | `4` | Digit (number entry) |
+| `05` | `5` | `5` | Digit (number entry) |
+| `06` | `6` | `6` | Digit (number entry) |
+| `07` | `7` | `7` | Digit (number entry) |
+| `08` | `8` | `8` | Digit (number entry) |
+| `09` | `9` | `9` | Digit (number entry) |
+| `0A` | `,` | `.` | Decimal point |
+| `0B` | `/-/` | `CHS` | Change sign of the mantissa (or of the exponent after ВП) |
+| `0C` | `ВП` | `EEX` | Start exponent entry (mantissa 0 becomes 1) |
+| `0D` | `Cx` | `CLX` | X ← 0; the next digit does not lift the stack |
+| `0E` | `В↑` | `ENTER` | Lift the stack, X stays; the next digit overwrites X |
+| `0F` | `FBx` | `LASTX` | Lift the stack, X ← X1 (previous result) |
+| `10` | `+` | `ADD` | X ← Y + X, stack drops |
+| `11` | `−` | `SUB` | X ← Y − X, stack drops |
+| `12` | `×` | `MUL` | X ← Y × X, stack drops |
+| `13` | `÷` | `DIV` | X ← Y ÷ X, stack drops |
+| `14` | `↔` | `SWAP` | Swap X and Y |
+| `15` | `F10ˣ` | `EXP10` | X ← 10^X |
+| `16` | `Feˣ` | `EXP` | X ← e^X |
+| `17` | `Flg` | `LOG` | X ← log₁₀ X |
+| `18` | `Fln` | `LN` | X ← ln X |
+| `19` | `Fsin⁻¹` | `ASIN` | X ← arcsin X (angle switch) |
+| `1A` | `Fcos⁻¹` | `ACOS` | X ← arccos X |
+| `1B` | `Ftg⁻¹` | `ATAN` | X ← arctg X |
+| `1C` | `Fsin` | `SIN` | X ← sin X |
+| `1D` | `Fcos` | `COS` | X ← cos X |
+| `1E` | `Ftg` | `TAN` | X ← tg X |
+| `20` | `Fπ` | `PI` | Lift the stack, X ← 3,1415926 |
+| `21` | `F√` | `SQRT` | X ← √X |
+| `22` | `Fx²` | `SQ` | X ← X² |
+| `23` | `F1/x` | `INV` | X ← 1/X |
+| `24` | `Fxʸ` | `POW` | X ← X^Y — **base X, exponent Y**; stack drops |
+| `25` | `F⟳` | `ROT` | Rotate: X→T, T→Z, Z→Y, Y→X; old X to X1 |
+| `50` | `С/П` | `HALT` | Stop; С/П resumes at the next step |
+| `51` | `БП nn` | `JMP nn` | Jump to nn |
+| `52` | `В/О` | `RTN` | Return from subroutine |
+| `53` | `ПП nn` | `CALL nn` | Call subroutine at nn (5-level return stack) |
+| `54` | `КНОП` | `NOP` | No operation |
+| `57` | `Fx≠0 nn` | `JZ nn` | Jump to nn if X = 0 (condition x≠0 fails) |
+| `58` | `FL2 nn` | `LOOP2 nn` | Same with R2 |
+| `59` | `Fx≥0 nn` | `JLT nn` | Jump to nn if X < 0 |
+| `5A` | `FL3 nn` | `LOOP3 nn` | Same with R3 |
+| `5B` | `FL1 nn` | `LOOP1 nn` | Same with R1 |
+| `5C` | `Fx<0 nn` | `JGE nn` | Jump to nn if X ≥ 0 |
+| `5D` | `FL0 nn` | `LOOP0 nn` | R0 − 1; jump to nn while not zero (R0 is left at 1) |
+| `5E` | `Fx=0 nn` | `JNZ nn` | Jump to nn if X ≠ 0 |
 
-| Mnemonic | Function | Domain |
-|----------|----------|--------|
-| `SQ` | X² | all |
-| `SQRT` | √X | X ≥ 0 |
-| `INV` | 1/X | X ≠ 0 |
-| `EXP` | eˣ | \|X\| < 230 |
-| `EXP10` | 10ˣ | \|X\| < 100 |
-| `LN` | ln(X) | X > 0 |
-| `LOG` | log₁₀(X) | X > 0 |
-| `SIN` | sin(X) | radians |
-| `COS` | cos(X) | radians |
-| `POW` | Y^X | varies |
-| `PI` | push π | - |
+## Register operations
 
-## Memory
+Registers are numbered 0–9, a, b, c, d (MK56-ASM: `R0`–`R9`, `RA`–`RD`);
+the last code digit is the register number (`ИПa` = `6A`).
 
-| Mnemonic | Description |
-|----------|-------------|
-| `STO Rn` | X → Register n |
-| `RCL Rn` | Register n → X |
-| `STO+ Rn` | Rn + X → Rn |
-| `STO- Rn` | Rn - X → Rn |
+| Codes | Keys | MK56-ASM | Operation |
+|-------|------|----------|-----------|
+| `40`–`4D` | `П0` … `Пd` (x→П) | `STO Rn` | Rn ← X |
+| `60`–`6D` | `ИП0` … `ИПd` (П→x) | `RCL Rn` | Lift the stack, X ← Rn |
 
-**Registers**: R0-R9, RA, RB, RC, RD (14 total)
+## Indirect (К) operations
 
-## Flow Control
+`К` operations take the target from a register. The register is modified
+first — **R0–R3 decrease by 1, R4–R6 increase by 1, R7–Rd are unchanged** —
+and its new integer value is the address or register number (manual p.67).
+Indirect conditionals modify the register only when they jump (p.70).
 
-| Mnemonic | Description |
-|----------|-------------|
-| `JMP addr` | Jump unconditionally |
-| `JGE addr` | Jump if X ≥ 0 |
-| `JLT addr` | Jump if X < 0 |
-| `CALL addr` | Call subroutine |
-| `RTN` | Return from subroutine |
-| `HALT` | Stop program |
-| `NOP` | No operation |
+| Codes | Keys | MK56-ASM | Operation |
+|-------|------|----------|-----------|
+| `70`–`7D` | `Кx≠0 n` | `JZ (Rn)` | Jump to the address in Rn if X = 0 |
+| `80`–`8D` | `КБП n` | `JMP (Rn)` | Jump to the address in Rn |
+| `90`–`9D` | `Кx≥0 n` | `JLT (Rn)` | Jump to the address in Rn if X < 0 |
+| `A0`–`AD` | `КПП n` | `CALL (Rn)` | Call the address in Rn |
+| `B0`–`BD` | `КП n` (К x→П) | `STO (Rn)` | R[Rn] ← X |
+| `C0`–`CD` | `Кx<0 n` | `JGE (Rn)` | Jump to the address in Rn if X ≥ 0 |
+| `D0`–`DD` | `КИП n` (К П→x) | `RCL (Rn)` | Lift the stack, X ← R[Rn] |
+| `E0`–`ED` | `Кx=0 n` | `JNZ (Rn)` | Jump to the address in Rn if X ≠ 0 |
 
-## Numeric Literals
+Codes not listed (26–3F, 55, 56, 5F, and the unused register slots) are not
+documented in the manual; the emulator stops with an error on them.
 
-```asm
-42          ; integer
-3.14159     ; decimal
--273.15     ; negative
-6.022e23    ; scientific notation
-```
+## Not in the manual
 
-## Directives
+- `F⟳` (`25`) and `F Bx` (`0F`) are missing from the printed Table 4; `0F`
+  appears in the functional test, `25` follows the Б3-34 family.
+- A `В/О` with an empty return stack goes to address 01 (Б3-34 behaviour).
+- Indirect operations use the integer part of the register (Дьяконов).
 
-| Directive | Purpose |
-|-----------|---------|
-| `.ORG n` | Set address origin |
-| `.EQU name val` | Define constant |
-| `.END` | End of program |
-| `.ASSERT cond` | Test assertion (emulator) |
-| `.TRACE` | Debug dump (emulator) |
-
-## Example: Factorial
-
-```asm
-; n! - factorial of n
-; Input: n in X
-; Output: n! in X
-
-        STO R0          ; counter = n
-        1               ; result = 1
-        STO R1
-loop:   RCL R0          ; get counter
-        JGE cont        ; if >= 0, continue
-        JMP done        ; else done
-cont:   RCL R1          ; get result
-        RCL R0          ; get counter
-        MUL             ; result * counter
-        STO R1          ; store result
-        RCL R0          ; get counter
-        1
-        SUB             ; counter - 1
-        STO R0          ; store counter
-        JMP loop        ; repeat
-done:   RCL R1          ; result to X
-        HALT
-```
-
-## Cyrillic → ASCII Quick Map
-
-| Cyrillic | ASCII |
-|----------|-------|
-| ИП/П→x | RCL |
-| П/x→П | STO |
-| БП | JMP |
-| С/П | HALT |
-| В/О | CALL/RTN |
-| x≥0 | JGE |
-| x<0 | JLT |
-| ВП/↑ | ENTER |
-| ↔/XY | SWAP |
-| СХ | CLX |

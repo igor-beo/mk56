@@ -1,175 +1,91 @@
 /**
  * MK56-ASM Assembler
- * Header file with opcodes, data structures, and API
+ *
+ * Two source syntaxes, both producing real MK-56 machine codes (one byte
+ * per program step, see common/mk56_isa.h):
+ *
+ *   MK56-ASM     one instruction per line: "loop: RCL R0", "JLT done",
+ *                "STO (R3)", number literals like "9.81" or "-1e-5"
+ *   listing      original notation, many steps per line, as printed in
+ *                Soviet manuals: "00: ИП0 Fx² 2 × С/П  БП 05". Selected by
+ *                the .LISTING directive or asm_assemble_ex(..., true);
+ *                the CLI uses it for *.mk56 files.
  */
 
 #ifndef MK56ASM_H
 #define MK56ASM_H
 
+#include "mk56_isa.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-#define MK56_MAX_PROGRAM_SIZE   105
-#define MK56_MAX_REGISTERS      14
 #define MK56_MAX_LABEL_LEN      64
 #define MK56_MAX_LABELS         128
+#define MK56_MAX_FIXUPS         128
+#define MK56_MAX_LINES          512
 #define MK56_MAX_LINE_LEN       256
-#define MK56_MAX_INSTRUCTIONS   256
-
-// ============================================================================
-// OPCODES
-// ============================================================================
-
-typedef enum {
-    // Stack operations (0x00-0x0F)
-    OP_NOP      = 0x00,
-    OP_ENTER    = 0x01,
-    OP_SWAP     = 0x02,
-    OP_CLX      = 0x03,
-    OP_ROLLDOWN = 0x04,
-    OP_ROLLUP   = 0x05,
-    
-    // Arithmetic (0x10-0x1F)
-    OP_ADD      = 0x10,
-    OP_SUB      = 0x11,
-    OP_MUL      = 0x12,
-    OP_DIV      = 0x13,
-    OP_CHS      = 0x14,
-    
-    // Math functions (0x20-0x2F)
-    OP_SQ       = 0x20,
-    OP_SQRT     = 0x21,
-    OP_INV      = 0x22,
-    OP_POW      = 0x23,
-    OP_EXP      = 0x24,
-    OP_EXP10    = 0x25,
-    OP_LN       = 0x26,
-    OP_LOG      = 0x27,
-    OP_SIN      = 0x28,
-    OP_COS      = 0x29,
-    OP_PI       = 0x2A,
-    
-    // Memory operations (0x30-0x6F)
-    OP_STO      = 0x30,     // + register (0-13)
-    OP_RCL      = 0x40,     // + register (0-13)
-    OP_STO_ADD  = 0x50,     // + register
-    OP_STO_SUB  = 0x60,     // + register
-    
-    // Flow control (0x70-0x7F)
-    OP_JMP      = 0x70,
-    OP_JGE      = 0x71,
-    OP_JLT      = 0x72,
-    OP_CALL     = 0x73,
-    OP_RTN      = 0x74,
-    OP_HALT     = 0x75,
-    
-    // Literals (0x80)
-    OP_LITERAL  = 0x80      // Followed by 8-byte double
-} Opcode;
-
-// ============================================================================
-// OPERAND TYPES
-// ============================================================================
-
-typedef enum {
-    OPERAND_NONE,
-    OPERAND_REG,
-    OPERAND_ADDR,
-    OPERAND_LITERAL
-} OperandType;
-
-// ============================================================================
-// DATA STRUCTURES
-// ============================================================================
-
-typedef struct {
-    char name[16];
-    Opcode opcode;
-    OperandType operand_type;
-} InstructionDef;
 
 typedef struct {
     char name[MK56_MAX_LABEL_LEN];
-    uint16_t address;
+    int address;
 } Label;
 
 typedef struct {
-    uint16_t address;
-    Opcode opcode;
-    OperandType operand_type;
-    union {
-        int reg_num;
-        uint16_t addr;
-        double literal;
-        char label_ref[MK56_MAX_LABEL_LEN];
-    } operand;
-    bool operand_is_label;
+    int address;                        // address step to patch
+    char label[MK56_MAX_LABEL_LEN];
     int source_line;
-    char source_text[MK56_MAX_LINE_LEN];
-} Instruction;
+} Fixup;
 
 typedef struct {
-    Instruction instructions[MK56_MAX_INSTRUCTIONS];
-    size_t instruction_count;
-    
+    int address;                        // first step emitted by the line
+    int steps;
+    int source_line;
+    char source_text[MK56_MAX_LINE_LEN];
+} ListingLine;
+
+typedef struct {
+    uint8_t binary[MK56_STEPS];
+    size_t binary_size;                 // highest address used + 1
+    int current_address;
+    bool listing_syntax;
+
     Label labels[MK56_MAX_LABELS];
     size_t label_count;
-    
-    uint8_t binary[MK56_MAX_INSTRUCTIONS * 10];  // Max size with literals
-    size_t binary_size;
-    
-    uint16_t current_address;
-    uint16_t origin;
-    
+    Fixup fixups[MK56_MAX_FIXUPS];
+    size_t fixup_count;
+    ListingLine lines[MK56_MAX_LINES];
+    size_t line_count;
+
     char error_msg[256];
     int error_line;
     bool has_error;
 } Assembler;
 
-// ============================================================================
-// API FUNCTIONS
-// ============================================================================
-
-/**
- * Initialize assembler state
- */
+/** Initialize assembler state */
 void asm_init(Assembler *as);
 
-/**
- * Assemble source code
- * @param as Assembler state
- * @param source Source code string
- * @return true on success, false on error
- */
+/** Assemble MK56-ASM source (a .LISTING directive switches syntax) */
 bool asm_assemble(Assembler *as, const char *source);
 
+/** Assemble, starting in listing syntax if `listing` is true */
+bool asm_assemble_ex(Assembler *as, const char *source, bool listing);
+
 /**
- * Get binary output
- * @param as Assembler state
- * @param out_size Output size in bytes
- * @return Pointer to binary data
+ * Encode one statement without labels - MK56-ASM ("RCL R3", "JMP 12")
+ * or listing notation ("ИП3", "БП 12") - into at most `max` steps.
+ * Returns the number of steps, or -1 with a message in `err`.
  */
+int asm_encode_line(const char *line, uint8_t *out, size_t max,
+                    char *err, size_t err_size);
+
+/** Get binary output (one byte per step) */
 const uint8_t* asm_get_binary(const Assembler *as, size_t *out_size);
 
-/**
- * Generate listing
- * @param as Assembler state
- * @param buffer Output buffer
- * @param buffer_size Buffer size
- * @return Length of listing
- */
+/** Listing: address, codes, original notation, source line */
 size_t asm_get_listing(const Assembler *as, char *buffer, size_t buffer_size);
 
-/**
- * Get error message
- * @param as Assembler state
- * @return Error message or NULL if no error
- */
+/** Get error message, or NULL if no error */
 const char* asm_get_error(const Assembler *as);
 
 #endif // MK56ASM_H

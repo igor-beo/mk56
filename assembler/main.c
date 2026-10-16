@@ -11,7 +11,8 @@
 
 static void print_usage(const char *prog) {
     printf("MK56-ASM Assembler v1.0\n\n");
-    printf("Usage: %s input.asm [-o output.bin] [-l listing.lst] [-v]\n\n", prog);
+    printf("Usage: %s input.asm|input.mk56 [-o output.bin] [-l listing.lst] [-v]\n\n", prog);
+    printf("*.mk56 files are original listings (\"ИП0 Fx² 2 × С/П\"); others are MK56-ASM.\n\n");
     printf("Options:\n");
     printf("  -o FILE   Output binary file (default: input.bin)\n");
     printf("  -l FILE   Generate listing file\n");
@@ -95,7 +96,9 @@ int main(int argc, char **argv) {
     
     // Assemble
     Assembler as;
-    if (!asm_assemble(&as, source)) {
+    const char *ext = strrchr(input_path, '.');
+    bool listing = ext && strcmp(ext, ".mk56") == 0;
+    if (!asm_assemble_ex(&as, source, listing)) {
         fprintf(stderr, "Assembly error: %s\n", asm_get_error(&as));
         free(source);
         return 1;
@@ -103,7 +106,6 @@ int main(int argc, char **argv) {
     free(source);
     
     if (verbose) {
-        printf("  Parsed %zu instructions\n", as.instruction_count);
         printf("  Found %zu labels\n", as.label_count);
     }
     
@@ -115,7 +117,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: Cannot write file: %s\n", output_path);
         return 1;
     }
-    printf("Output: %s (%zu bytes)\n", output_path, bin_size);
+    printf("Output: %s (%zu steps)\n", output_path, bin_size);
     
     // Write listing
     if (listing_path) {

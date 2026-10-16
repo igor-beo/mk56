@@ -1,0 +1,9 @@
+; Parser check: manual table 11 (quadratic via К ПП 7), written with a mix
+; of the spellings found in printed listings.
+; @reg Ra=3 Rb=2 Rc=-1
+; @run
+; @expect X=-1
+; @expect R1=0.33333333
+00: 1 9 x→П 7  К ПП 7  +  П→x a  ÷  2  ÷  П1  КПП7  XY  −  ИП а  :  2
+16: ÷ П2 С/П
+19: ИПa ИП c × 4 * ИПв F x² ↔ - F√ П→x b /−/ В/0

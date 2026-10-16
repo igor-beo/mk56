@@ -1,117 +1,86 @@
-# MK-56 Elektronika Development Environment
+# Электроника МК-56 Development Environment
 
 <p align="center">
-  <img src="docs/images/mk56-calculator.png" alt="MK-56 Calculator" width="300">
+  <img src="docs/images/mk56-keyboard.png" alt="МК-56 keyboard layout, Fig. 2 of the original manual" width="640">
 </p>
 
-A complete development toolkit for the **MK-56 "Elektronika"** Soviet programmable calculator, featuring an assembly language, assembler, and interactive emulator.
+Tools and documentation for the **Электроника МК-56**, a Soviet desktop
+programmable RPN calculator from the 1980s that is command-compatible with
+the Б3-34. The project includes:
 
-## 🎯 Overview
-
-The MK-56 was a Soviet programmable RPN calculator produced in the 1980s. This project provides modern tools to:
-
-- Write programs in human-readable **MK56-ASM** assembly language
-- Assemble programs to binary using the C assembler
-- Run and debug programs in an interactive emulator with TUI
+- an **emulator** that follows the original manual: real machine codes,
+  8-digit truncating arithmetic, indirect addressing, loops and the
+  jump-on-fail conditionals, in a Turbo C–style ncurses TUI;
+- an **assembler** that reads both MK56-ASM and listings typed **exactly as
+  printed** in Soviet books (`00: ИП2 Fx² В↑ Fπ × 4 ÷ С/П`);
+- the **first English translation** of the factory operating manual;
+- a **program library** checked against Дьяконов's 1985 handbook, every
+  program with a test.
 
 ```
-.asm source  ──▶  assembler  ──▶  .bin binary  ──▶  emulator  ──▶  result
+.asm / .mk56  ──▶  mk56asm  ──▶  .bin (one byte per step)  ──▶  mk56emu
 ```
 
-## 📦 Components
-
-| Component | Language | Description |
-|-----------|----------|-------------|
-| [assembler/](assembler/) | C | MK56-ASM assembler |
-| [emulator/](emulator/) | C | Interactive emulator with ncurses TUI |
-| [asm/](asm/) | - | Language specification & examples |
-| [docs/](docs/) | Markdown | Complete device documentation |
-| [programs/](programs/) | - | Mathematical program library |
-| [editors/](editors/) | - | IDE extensions (VSCode) |
-
-## 🚀 Quick Start
-
-### Build
+## Quick start
 
 ```bash
-# Build assembler
-cd assembler && make && cd ..
+make            # assembler/mk56asm and emulator/mk56emu (needs a C11 compiler and ncurses)
+make test       # core tests plus every program with @expect lines
 
-# Build emulator
-cd emulator && make && cd ..
+./emulator/mk56emu asm/examples/factorial.asm -c -i 5      # Display: 120,
+./emulator/mk56emu programs/listings/04-01-sinh.mk56        # TUI
 ```
 
-### Write a Program
+The [getting started guide](docs/getting-started.md) covers the first
+program, typing in listings and the TUI.
 
-```asm
-; square.asm - Calculate x²
-        SQ              ; Square X register
-        HALT            ; Stop and display result
-.END
-```
+## Contents
 
-### Assemble & Run
+| Directory | Contents |
+|-----------|----------|
+| [assembler/](assembler/) | MK56-ASM and listing assembler (C) |
+| [emulator/](emulator/) | Emulator core and ncurses TUI (C) |
+| [common/](common/) | The opcode table shared by assembler, emulator and TUI |
+| [tests/](tests/) | Core tests from the manual's tables, program test runner |
+| [asm/](asm/) | [Language spec](asm/MK56-ASM-SPEC.md), [instruction set](asm/INSTRUCTION-SET.md), examples |
+| [docs/](docs/) | [Manual translation](docs/manual/README.md), [getting started](docs/getting-started.md) |
+| [programs/](programs/) | Program library from Дьяконов's handbook |
+| [references/](references/) | Scans of the original manual, schematic and handbook |
+| [editors/](editors/) | VSCode syntax highlighting for `.asm` and `.mk56` |
 
-```bash
-# Assemble
-./assembler/mk56asm square.asm
+## The calculator
 
-# Run with input value 5
-./emulator/mk56emu square.bin -c -i 5
-# Result: X = 25
-```
+| Feature | Value | Manual |
+|---------|-------|--------|
+| Program memory | 98 steps (00–97) | p.7 |
+| Registers | 14 (R0–R9, a, b, c, d) | p.48 |
+| Stack | X, Y, Z, T and the previous-result register X1 | p.34, p.43 |
+| Return stack | 5 levels | p.56 |
+| Numbers | 8-digit mantissa, exponent ±99 | p.5 |
+| Angles | radians, degrees, grads | p.25 |
+| Display | 12-position vacuum-fluorescent (ИЛЦ1-13/8Л) | p.5 |
+| Power | 220 V mains | p.18 |
 
-## 📐 MK56-ASM Language
+Where the manual is silent, the emulator follows the Б3-34 family, and each
+such case is marked in the source. Transcendental functions are computed in
+IEEE double and then truncated to 8 digits. They can differ from the real
+chip in the last digit or two, which is within the manual's stated accuracy.
 
-### Instruction Categories
+## License
 
-| Category | Instructions |
-|----------|--------------|
-| **Stack** | `ENTER`, `SWAP`, `CLX`, `ROLLDOWN`, `ROLLUP` |
-| **Arithmetic** | `ADD`, `SUB`, `MUL`, `DIV`, `CHS` |
-| **Math** | `SQ`, `SQRT`, `INV`, `POW`, `EXP`, `LN`, `LOG`, `SIN`, `COS`, `PI` |
-| **Memory** | `STO Rn`, `RCL Rn`, `STO+ Rn`, `STO- Rn` |
-| **Flow** | `JMP`, `JGE`, `JLT`, `CALL`, `RTN`, `HALT` |
-
-See [MK56-ASM-SPEC.md](asm/MK56-ASM-SPEC.md) for complete specification.
-
-## 📖 Documentation
-
-- **[asm/MK56-ASM-SPEC.md](asm/MK56-ASM-SPEC.md)** - Assembly language specification
-- **[asm/INSTRUCTION-SET.md](asm/INSTRUCTION-SET.md)** - Quick reference card
-- **[docs/](docs/)** - Complete MK-56 device documentation (translated from Russian)
-- **[programs/](programs/)** - Mathematical program library from Dyakonov's reference
-
-## 🔧 Calculator Specifications
-
-| Feature | Value |
-|---------|-------|
-| Program steps | 105 max |
-| Registers | 14 (R0-R9, RA-RD) |
-| Stack levels | 4 (X, Y, Z, T) |
-| Number range | ±10⁻⁹⁹ to ±10⁹⁹ |
-| Precision | 8 significant digits |
-
-## 🛠️ IDE Support
-
-- **[VSCode Extension](editors/vscode-mk56-asm/)** - Syntax highlighting for `.asm` files
-
-## 📚 References
-
-Original documentation and source materials are preserved in the [references/](references/) folder.
-
-## 📜 License
-
-MIT License - See [LICENSE](LICENSE)
+MIT License. See [LICENSE](LICENSE).
 
 **Attribution Required**: When using this software, please credit:
-> Igor Scobi (scobi84) - MK-56 Development Environment
+> Igor Berezhnoi - MK-56 Development Environment
 
-## 🤝 Contributing
+## Contributing
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting PRs.
+Contributions are welcome, especially corrections to the translation and
+to the program library. Please cite the page of the scan. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- Original MK-56 documentation from Soviet technical manuals
-- V.P. Dyakonov's "Reference Manual for Calculations on Microcalculators" (1985)
+- The factory manual «Микрокалькулятор Электроника МК56. Техническое
+  описание и инструкция по эксплуатации», digitised by ru-hpc.narod.ru
+- В. П. Дьяконов, «Справочник по расчётам на микрокалькуляторах», Наука, 1985

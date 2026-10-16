@@ -1,8 +1,8 @@
 {
   "name": "mk56-asm",
   "displayName": "MK-56 Assembly",
-  "description": "Syntax highlighting for MK-56 calculator assembly language",
-  "version": "1.0.0",
+  "description": "Syntax highlighting for MK-56 assembly (MK56-ASM) and original listings (.mk56)",
+  "version": "2.0.0",
   "publisher": "mk56",
   "engines": {
     "vscode": "^1.60.0"
@@ -14,8 +14,14 @@
     "languages": [
       {
         "id": "mk56asm",
-        "aliases": ["MK-56 Assembly", "mk56asm"],
-        "extensions": [".asm", ".mk56"],
+        "aliases": [
+          "MK-56 Assembly",
+          "mk56asm"
+        ],
+        "extensions": [
+          ".asm",
+          ".mk56"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],

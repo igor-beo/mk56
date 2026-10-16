@@ -27,30 +27,29 @@ Thank you for your interest in contributing!
 - Keep functions under 50 lines when possible
 - Add comments for complex logic
 
-#### Python Code
-- Follow PEP 8
-- Use type hints
-- Add docstrings to functions
+- Opcodes live only in `common/mk56_isa.c`; never add a second table
 
-#### Assembly Examples
-- Include header comments describing purpose, input, output
-- Use meaningful label names
-- Comment non-obvious operations
+#### Programs
+- Include header comments describing purpose, input, output and source
+  (book and page)
+- Add `; @input` / `; @expect` lines so `make test` runs the program
+- In `.mk56` listings, start each line with its `NN:` address
 
 ### Testing
 
 ```bash
-# Test assembler
-cd asm/assembler-c && make test
-
-# Test emulator
-cd asm/emulator && make test
+make test
 ```
+
+New emulator behaviour needs a test in `tests/test_core.c`, ideally an
+example from the manual with its page number.
 
 ### Documentation
 
-- Update relevant docs when adding features
-- Keep wiki pages in sync with code
+- Emulator behaviour must match the [manual](docs/manual/README.md); cite
+  the page. Behaviour the manual does not describe is marked "inferred" in
+  the code.
+- Translation fixes: cite the page of the scan in `references/`.
 
 ## Attribution
 

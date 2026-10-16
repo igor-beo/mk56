@@ -11,6 +11,13 @@
 ; Note: Also equals n(n+1)/2
 ; ============================================
 
+;
+; @input 10
+; @expect X=55
+; @reset
+; @input 100
+; @expect X=5050
+
 .ORG 0
 
 sum_n:

@@ -12,6 +12,11 @@
 ; Test: |5 4; 1.5 3| = 5×3 - 4×1.5 = 15 - 6 = 9
 ; ============================================
 
+;
+; @reg R8=5 R9=4 R5=1.5 R6=3
+; @run
+; @expect X=9
+
 .ORG 0
 
 ; Pre-load registers before running:

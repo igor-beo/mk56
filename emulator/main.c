@@ -2,12 +2,13 @@
  * MK56 Emulator - Main Entry Point
  * 
  * Usage:
- *   mk56emu program.bin           - Run with TUI
+ *   mk56emu program.bin           - Run with TUI (.asm / .mk56 are assembled)
  *   mk56emu program.bin -c        - Console mode (no UI)
  *   mk56emu program.bin -c -i 5   - Console with input value
  */
 
 #include "mk56emu.h"
+#include "mk56asm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +21,12 @@ extern void ui_cleanup(void);
 
 static void print_usage(const char *prog) {
     printf("MK56 Emulator v1.0\n\n");
-    printf("Usage: %s program.bin [options]\n\n", prog);
+    printf("Usage: %s program.bin|program.asm|program.mk56 [options]\n\n", prog);
     printf("Options:\n");
     printf("  -c          Console mode (no TUI)\n");
     printf("  -i VALUE    Input value to X register\n");
-    printf("  -r R0=VAL   Set register value (e.g., -r R0=5)\n");
+    printf("  -r R0=VAL   Set register value (e.g., -r R0=5, -r Ra=12)\n");
+    printf("  -a MODE     Angle switch: rad (default), deg, grad\n");
     printf("  -d          Disassemble and exit\n");
     printf("  -h          Show this help\n");
     printf("\nTUI Controls:\n");
@@ -34,7 +36,7 @@ static void print_usage(const char *prog) {
 }
 
 static void console_run(MK56VM *vm) {
-    printf("Running program (%zu bytes)...\n\n", vm->program_size);
+    printf("Running program (%zu steps)...\n\n", vm->program_size);
     
     vm_run(vm);
     
@@ -47,7 +49,10 @@ static void console_run(MK56VM *vm) {
         printf("Error: %s\n", vm_error_str(vm->error));
     }
     
-    printf("Cycles: %llu\n\n", (unsigned long long)vm->cycles);
+    printf("Steps executed: %llu\n", (unsigned long long)vm->cycles);
+    char shown[40];
+    vm_format_display(vm, shown, sizeof shown);
+    printf("Display: %s\n\n", shown);
     
     printf("Stack:\n");
     printf("  X = %.10g\n", vm_get_stack(vm, 0));
@@ -60,35 +65,63 @@ static void console_run(MK56VM *vm) {
         double v = vm_get_reg(vm, i);
         if (v != 0) {
             char name[4];
-            if (i < 10) snprintf(name, sizeof(name), "R%d", i);
-            else snprintf(name, sizeof(name), "R%c", 'A' + i - 10);
+            snprintf(name, sizeof(name), "R%s", mk56_reg_name(i));
             printf("  %s = %.10g\n", name, v);
         }
     }
 }
 
 static void disassemble(MK56VM *vm) {
-    printf("Disassembly (%zu bytes):\n\n", vm->program_size);
-    printf("ADDR  BYTES     INSTRUCTION\n");
-    printf("----  --------  -----------\n");
+    printf("Disassembly (%zu steps):\n\n", vm->program_size);
+    printf("ADDR  CODES  KEYS          MK56-ASM\n");
+    printf("----  -----  ------------  -----------\n");
     
     uint16_t addr = 0;
     while (addr < vm->program_size) {
-        char disasm[32];
+        char disasm[32], key[40], codes[8];
         int size = vm_disasm(vm, addr, disasm, sizeof(disasm));
+        mk56_disasm(vm->program, addr, false, key, sizeof(key));
+        if (size == 2) snprintf(codes, sizeof codes, "%02X %02X", vm->program[addr], vm->program[addr + 1]);
+        else snprintf(codes, sizeof codes, "%02X", vm->program[addr]);
         
-        // Print bytes
-        printf("%03d   ", addr);
-        for (int i = 0; i < size && i < 4; i++) {
-            printf("%02X ", vm->program[addr + i]);
-        }
-        for (int i = size; i < 4; i++) {
-            printf("   ");
-        }
-        printf("  %s\n", disasm);
+        // Pad the UTF-8 key column by characters, not bytes
+        int width = 0;
+        for (const char *c = key; *c; c++) if ((*c & 0xC0) != 0x80) width++;
+        printf("%02d    %-5s  %s%*s  %s\n", addr, codes, key, 12 - width, "", disasm);
         
         addr += size;
     }
+}
+
+/* .asm and .mk56 sources are assembled in place; anything else is binary. */
+static bool load_program(MK56VM *vm, const char *path) {
+    const char *ext = strrchr(path, '.');
+    bool listing = ext && strcmp(ext, ".mk56") == 0;
+    if (!listing && !(ext && strcmp(ext, ".asm") == 0)) return vm_load_file(vm, path);
+    
+    FILE *f = fopen(path, "rb");
+    if (!f) return false;
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *src = malloc((size_t)len + 1);
+    Assembler *as = malloc(sizeof *as);
+    bool ok = src && as && fread(src, 1, (size_t)len, f) == (size_t)len;
+    fclose(f);
+    if (ok) {
+        src[len] = '\0';
+        ok = asm_assemble_ex(as, src, listing);
+        if (ok) {
+            size_t size;
+            const uint8_t *bin = asm_get_binary(as, &size);
+            ok = vm_load(vm, bin, size);
+        } else {
+            fprintf(stderr, "Assembly error: %s\n", asm_get_error(as));
+        }
+    }
+    free(src);
+    free(as);
+    return ok;
 }
 
 int main(int argc, char **argv) {
@@ -114,8 +147,8 @@ int main(int argc, char **argv) {
             input_value = atof(argv[++i]);
             has_input = true;
         }
-        else if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) {
-            // Will handle after VM init
+        else if ((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "-a") == 0) && i + 1 < argc) {
+            // Handled after VM init
             i++;
         }
         else if (argv[i][0] != '-') {
@@ -132,15 +165,21 @@ int main(int argc, char **argv) {
     MK56VM vm;
     vm_init(&vm);
     
-    if (!vm_load_file(&vm, prog_path)) {
+    if (!load_program(&vm, prog_path)) {
         fprintf(stderr, "Error: Cannot load program: %s\n", prog_path);
         return 1;
     }
     
-    printf("Loaded: %s (%zu bytes)\n", prog_path, vm.program_size);
+    printf("Loaded: %s (%zu steps)\n", prog_path, vm.program_size);
     
-    // Handle -r options (set registers)
+    // Handle -r (set registers) and -a (angle switch)
     for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
+            const char *mode = argv[++i];
+            vm.angle = strcmp(mode, "deg") == 0 ? ANGLE_DEG
+                     : strcmp(mode, "grad") == 0 ? ANGLE_GRAD : ANGLE_RAD;
+            continue;
+        }
         if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) {
             char *spec = argv[++i];
             // Parse R0=5 format
@@ -154,7 +193,7 @@ int main(int argc, char **argv) {
                 char *eq = strchr(spec, '=');
                 if (reg >= 0 && eq) {
                     vm.regs[reg] = atof(eq + 1);
-                    printf("Set R%X = %g\n", reg, vm.regs[reg]);
+                    printf("Set R%s = %g\n", mk56_reg_name(reg), vm.regs[reg]);
                 }
             }
         }
