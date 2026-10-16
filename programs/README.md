@@ -1,19 +1,30 @@
 # Program Library
 
 Programs from В. П. Дьяконов, «Справочник по расчётам на микрокалькуляторах»
-(Наука, 1985), which the book gives for the Б3-34, МК-54 and МК-56. Each
-listing:
+(Наука, 1985), which the book gives for the Б3-34, МК-54 and МК-56. Every
+program comes in two forms:
 
-- was transcribed from page images of the book (`references/book61.pdf`) and
-  checked step by step;
-- is written in the original notation as a `.mk56` file, with a `NN:`
-  address on every line;
-- carries the book's worked example as a test (`; @input` / `; @expect`),
-  which `make test` runs.
+- **`asm/*.asm`, to read and to key in.** One step per line in MK56-ASM, with
+  labels instead of raw jump addresses. The comment on each line gives the
+  address, the keys to press on the calculator and the codes it shows:
+
+  ```
+  sub42:
+          RCL RD          ; 42  ИПd            6D
+          RCL RC          ; 43  ИПc            6C
+          MUL             ; 44  ×              12
+  ```
+- **`listings/*.mk56`, the book's listing as printed.** It was transcribed
+  from page images of the book (`references/book61.pdf`) and checked step by
+  step, so it can be compared line by line with the page. The `.asm` files are
+  generated from it (`make asm-library`), and `make test` checks that both
+  forms give the same program.
+
+Both carry the book's worked example as a test (`; @input` / `; @expect`).
 
 ```bash
-./emulator/mk56emu programs/listings/04-01-sinh.mk56          # TUI
-./tests/mk56test programs/listings/*.mk56                     # run all tests
+./emulator/mk56emu programs/asm/04-01-sinh.asm               # TUI
+./assembler/mk56asm my-listing.mk56 -s my-listing.asm        # convert your own
 ```
 
 **Status:** *verified* means our earlier transcription matched the book.
@@ -28,105 +39,105 @@ last digits of the real chip's sine.
 
 ### Introductory examples (ch. 1)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| sin(πnft)/(πnft), branching version | p.22–24 (ch.1, unnumbered) | corrected | [01-01-sinc-branch.mk56](listings/01-01-sinc-branch.mk56) |
-| sin(πnft)/(πnft), loop version | p.22–24 (ch.1, unnumbered) | corrected | [01-02-sinc-loop.mk56](listings/01-02-sinc-loop.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| sin(πnft)/(πnft), branching version | p.22–24 (ch.1, unnumbered) | corrected | [01-01-sinc-branch.asm](asm/01-01-sinc-branch.asm) | [.mk56](listings/01-01-sinc-branch.mk56) |
+| sin(πnft)/(πnft), loop version | p.22–24 (ch.1, unnumbered) | corrected | [01-02-sinc-loop.asm](asm/01-02-sinc-loop.asm) | [.mk56](listings/01-02-sinc-loop.mk56) |
 
 ### Simple calculations (ch. 3)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| 3.1: Integer part of x (1 < x < 10^8) | p.56 | verified | [03-01-int-part.mk56](listings/03-01-int-part.mk56) |
-| 3.2: Fractional part of x (0 < x < 10^8) | p.56 | verified | [03-02-frac-part.mk56](listings/03-02-frac-part.mk56) |
-| 3.3: Truncate x (0 < x < 10^8) to a step eps = 1*10^-n | p.56 | corrected | [03-03-truncate.mk56](listings/03-03-truncate.mk56) |
-| 3.4: Round x of any sign to a step eps = 1*10^-n | p.56 | corrected | [03-04-round.mk56](listings/03-04-round.mk56) |
-| 3.5: Absolute value | p.56 | verified | [03-05-abs.mk56](listings/03-05-abs.mk56) |
-| 3.6: Angle in radians -> degrees, minutes, seconds | p.56–57 | corrected | [03-06-rad-to-dms.mk56](listings/03-06-rad-to-dms.mk56) |
-| 3.7: Angle in degrees, minutes, seconds -> radians | p.57 | corrected | [03-07-dms-to-rad.mk56](listings/03-07-dms-to-rad.mk56) |
-| 3.8: Determinant of order 2 | p.57 | verified | [03-08-det2.mk56](listings/03-08-det2.mk56) |
-| 3.9: Determinant of order 3 | p.57 | verified | [03-09-det3.mk56](listings/03-09-det3.mk56) |
-| 3.10: Determinant of order 4 | p.58 | corrected | [03-10-det4.mk56](listings/03-10-det4.mk56) |
-| 3.11: Addition of 4x3 matrices (any number of them) | p.59 | corrected | [03-11-matrix-add.mk56](listings/03-11-matrix-add.mk56) |
-| 3.12: Product of a 3x4 matrix A and a 4x2 matrix B | p.59–60 | corrected | [03-12-matrix-mul.mk56](listings/03-12-matrix-mul.mk56) |
-| 3.13: Inverse of a 2x2 matrix (result replaces the input) | p.60–61 | corrected | [03-13-inverse2.mk56](listings/03-13-inverse2.mk56) |
-| 3.14: Inverse of a 3x3 matrix (result replaces the input) | p.61 | corrected | [03-14-inverse3.mk56](listings/03-14-inverse3.mk56) |
-| 3.15: Factorial n!, n ≥ 1 | p.61 | verified | [03-15-factorial.mk56](listings/03-15-factorial.mk56) |
-| 3.16: Factorial n!, n ≥ 0 | p.61 | verified | [03-16-factorial-any.mk56](listings/03-16-factorial-any.mk56) |
-| 3.17: Factorial of large n by Stirling's formula | p.61–62 | corrected | [03-17-stirling.mk56](listings/03-17-stirling.mk56) |
-| 3.19: Permutations, arrangements and combinations | p.62 | transcribed | [03-19-combinations.mk56](listings/03-19-combinations.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| 3.1: Integer part of x (1 < x < 10^8) | p.56 | verified | [03-01-int-part.asm](asm/03-01-int-part.asm) | [.mk56](listings/03-01-int-part.mk56) |
+| 3.2: Fractional part of x (0 < x < 10^8) | p.56 | verified | [03-02-frac-part.asm](asm/03-02-frac-part.asm) | [.mk56](listings/03-02-frac-part.mk56) |
+| 3.3: Truncate x (0 < x < 10^8) to a step eps = 1*10^-n | p.56 | corrected | [03-03-truncate.asm](asm/03-03-truncate.asm) | [.mk56](listings/03-03-truncate.mk56) |
+| 3.4: Round x of any sign to a step eps = 1*10^-n | p.56 | corrected | [03-04-round.asm](asm/03-04-round.asm) | [.mk56](listings/03-04-round.mk56) |
+| 3.5: Absolute value | p.56 | verified | [03-05-abs.asm](asm/03-05-abs.asm) | [.mk56](listings/03-05-abs.mk56) |
+| 3.6: Angle in radians -> degrees, minutes, seconds | p.56–57 | corrected | [03-06-rad-to-dms.asm](asm/03-06-rad-to-dms.asm) | [.mk56](listings/03-06-rad-to-dms.mk56) |
+| 3.7: Angle in degrees, minutes, seconds -> radians | p.57 | corrected | [03-07-dms-to-rad.asm](asm/03-07-dms-to-rad.asm) | [.mk56](listings/03-07-dms-to-rad.mk56) |
+| 3.8: Determinant of order 2 | p.57 | verified | [03-08-det2.asm](asm/03-08-det2.asm) | [.mk56](listings/03-08-det2.mk56) |
+| 3.9: Determinant of order 3 | p.57 | verified | [03-09-det3.asm](asm/03-09-det3.asm) | [.mk56](listings/03-09-det3.mk56) |
+| 3.10: Determinant of order 4 | p.58 | corrected | [03-10-det4.asm](asm/03-10-det4.asm) | [.mk56](listings/03-10-det4.mk56) |
+| 3.11: Addition of 4x3 matrices (any number of them) | p.59 | corrected | [03-11-matrix-add.asm](asm/03-11-matrix-add.asm) | [.mk56](listings/03-11-matrix-add.mk56) |
+| 3.12: Product of a 3x4 matrix A and a 4x2 matrix B | p.59–60 | corrected | [03-12-matrix-mul.asm](asm/03-12-matrix-mul.asm) | [.mk56](listings/03-12-matrix-mul.mk56) |
+| 3.13: Inverse of a 2x2 matrix (result replaces the input) | p.60–61 | corrected | [03-13-inverse2.asm](asm/03-13-inverse2.asm) | [.mk56](listings/03-13-inverse2.mk56) |
+| 3.14: Inverse of a 3x3 matrix (result replaces the input) | p.61 | corrected | [03-14-inverse3.asm](asm/03-14-inverse3.asm) | [.mk56](listings/03-14-inverse3.mk56) |
+| 3.15: Factorial n!, n ≥ 1 | p.61 | verified | [03-15-factorial.asm](asm/03-15-factorial.asm) | [.mk56](listings/03-15-factorial.mk56) |
+| 3.16: Factorial n!, n ≥ 0 | p.61 | verified | [03-16-factorial-any.asm](asm/03-16-factorial-any.asm) | [.mk56](listings/03-16-factorial-any.mk56) |
+| 3.17: Factorial of large n by Stirling's formula | p.61–62 | corrected | [03-17-stirling.asm](asm/03-17-stirling.asm) | [.mk56](listings/03-17-stirling.mk56) |
+| 3.19: Permutations, arrangements and combinations | p.62 | transcribed | [03-19-combinations.asm](asm/03-19-combinations.asm) | [.mk56](listings/03-19-combinations.mk56) |
 
 ### Elementary and special functions (ch. 4)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| 4.1: Hyperbolic sine sh(x) = (eˣ − 1/eˣ)/2 | p.64 | verified | [04-01-sinh.mk56](listings/04-01-sinh.mk56) |
-| 4.2: Hyperbolic cosine ch(x) = (eˣ + 1/eˣ)/2 | p.64 | verified | [04-02-cosh.mk56](listings/04-02-cosh.mk56) |
-| 4.3: Hyperbolic tangent th(x) = sh(x)/sqrt(1 + sh²(x)) | p.64 | verified | [04-03-tanh.mk56](listings/04-03-tanh.mk56) |
-| 4.4: Inverse hyperbolic sine arsh(x) = ln(x + sqrt(1 + x²)), any x | p.64 | verified | [04-04-arsh.mk56](listings/04-04-arsh.mk56) |
-| 4.5: Inverse hyperbolic cosine arch(x) = ln(x + sqrt(x² − 1)), x > 1 | p.64 | verified | [04-05-arch.mk56](listings/04-05-arch.mk56) |
-| 4.6: Inverse hyperbolic tangent arth(x) = ln sqrt((x + 1)/(1 − x)), −1 < x < 1 | p.64 | corrected | [04-06-arth.mk56](listings/04-06-arth.mk56) |
-| 4.7: Inverse hyperbolic cotangent arcth(x) = ln sqrt(1 + 2/(x − 1)), x > 1 | p.65 | verified | [04-07-arcth.mk56](listings/04-07-arcth.mk56) |
-| 4.8: Continued fraction f = a0 + b1/(a1 + b2/(a2 + b3/(a3 + ...))) | p.65 | corrected | [04-08-contfrac.mk56](listings/04-08-contfrac.mk56) |
-| 4.9: Rational function f(x) = (15 − 21x² + x⁴)/(15 − 6x²) | p.65 | verified | [04-09-ratfunc.mk56](listings/04-09-ratfunc.mk56) |
-| 4.10: Real polynomial of degree n ≤ 11 (Horner) | p.65–66 | corrected | [04-10-horner.mk56](listings/04-10-horner.mk56) |
-| 4.11: Polynomial of degree n ≤ 10 of a complex variable | p.66 | corrected | [04-11-complex-poly.mk56](listings/04-11-complex-poly.mk56) |
-| 4.12: Sum of integers S = 1 + 2 + ... + n | p.66–67 | verified | [04-12-sum-int.mk56](listings/04-12-sum-int.mk56) |
-| 4.13: Sum of factorials S(n!) = 1! + 2! + ... + n! | p.67 | verified | [04-13-sum-fact.mk56](listings/04-13-sum-fact.mk56) |
-| 4.14: Product of factorials P(n!) = 1!·2!·3!·...·n! | p.67 | verified | [04-14-prod-fact.mk56](listings/04-14-prod-fact.mk56) |
-| 4.15: y = sum of kⁿ for k = 1..m | p.67–68 | verified | [04-15-sum-powers.mk56](listings/04-15-sum-powers.mk56) |
-| 4.18: Coefficients of the Hermite polynomial Hn(x) | p.69 | corrected | [04-18-hermite-coef.mk56](listings/04-18-hermite-coef.mk56) |
-| 4.19: Coefficients of the Chebyshev polynomial Tn(x) | p.69 | corrected | [04-19-chebyshev-coef.mk56](listings/04-19-chebyshev-coef.mk56) |
-| 4.20: Laguerre polynomial Ln(x) | p.69–70 | corrected | [04-20-laguerre.mk56](listings/04-20-laguerre.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| 4.1: Hyperbolic sine sh(x) = (eˣ − 1/eˣ)/2 | p.64 | verified | [04-01-sinh.asm](asm/04-01-sinh.asm) | [.mk56](listings/04-01-sinh.mk56) |
+| 4.2: Hyperbolic cosine ch(x) = (eˣ + 1/eˣ)/2 | p.64 | verified | [04-02-cosh.asm](asm/04-02-cosh.asm) | [.mk56](listings/04-02-cosh.mk56) |
+| 4.3: Hyperbolic tangent th(x) = sh(x)/sqrt(1 + sh²(x)) | p.64 | verified | [04-03-tanh.asm](asm/04-03-tanh.asm) | [.mk56](listings/04-03-tanh.mk56) |
+| 4.4: Inverse hyperbolic sine arsh(x) = ln(x + sqrt(1 + x²)), any x | p.64 | verified | [04-04-arsh.asm](asm/04-04-arsh.asm) | [.mk56](listings/04-04-arsh.mk56) |
+| 4.5: Inverse hyperbolic cosine arch(x) = ln(x + sqrt(x² − 1)), x > 1 | p.64 | verified | [04-05-arch.asm](asm/04-05-arch.asm) | [.mk56](listings/04-05-arch.mk56) |
+| 4.6: Inverse hyperbolic tangent arth(x) = ln sqrt((x + 1)/(1 − x)), −1 < x < 1 | p.64 | corrected | [04-06-arth.asm](asm/04-06-arth.asm) | [.mk56](listings/04-06-arth.mk56) |
+| 4.7: Inverse hyperbolic cotangent arcth(x) = ln sqrt(1 + 2/(x − 1)), x > 1 | p.65 | verified | [04-07-arcth.asm](asm/04-07-arcth.asm) | [.mk56](listings/04-07-arcth.mk56) |
+| 4.8: Continued fraction f = a0 + b1/(a1 + b2/(a2 + b3/(a3 + ...))) | p.65 | corrected | [04-08-contfrac.asm](asm/04-08-contfrac.asm) | [.mk56](listings/04-08-contfrac.mk56) |
+| 4.9: Rational function f(x) = (15 − 21x² + x⁴)/(15 − 6x²) | p.65 | verified | [04-09-ratfunc.asm](asm/04-09-ratfunc.asm) | [.mk56](listings/04-09-ratfunc.mk56) |
+| 4.10: Real polynomial of degree n ≤ 11 (Horner) | p.65–66 | corrected | [04-10-horner.asm](asm/04-10-horner.asm) | [.mk56](listings/04-10-horner.mk56) |
+| 4.11: Polynomial of degree n ≤ 10 of a complex variable | p.66 | corrected | [04-11-complex-poly.asm](asm/04-11-complex-poly.asm) | [.mk56](listings/04-11-complex-poly.mk56) |
+| 4.12: Sum of integers S = 1 + 2 + ... + n | p.66–67 | verified | [04-12-sum-int.asm](asm/04-12-sum-int.asm) | [.mk56](listings/04-12-sum-int.mk56) |
+| 4.13: Sum of factorials S(n!) = 1! + 2! + ... + n! | p.67 | verified | [04-13-sum-fact.asm](asm/04-13-sum-fact.asm) | [.mk56](listings/04-13-sum-fact.mk56) |
+| 4.14: Product of factorials P(n!) = 1!·2!·3!·...·n! | p.67 | verified | [04-14-prod-fact.asm](asm/04-14-prod-fact.asm) | [.mk56](listings/04-14-prod-fact.mk56) |
+| 4.15: y = sum of kⁿ for k = 1..m | p.67–68 | verified | [04-15-sum-powers.asm](asm/04-15-sum-powers.asm) | [.mk56](listings/04-15-sum-powers.mk56) |
+| 4.18: Coefficients of the Hermite polynomial Hn(x) | p.69 | corrected | [04-18-hermite-coef.asm](asm/04-18-hermite-coef.asm) | [.mk56](listings/04-18-hermite-coef.mk56) |
+| 4.19: Coefficients of the Chebyshev polynomial Tn(x) | p.69 | corrected | [04-19-chebyshev-coef.asm](asm/04-19-chebyshev-coef.asm) | [.mk56](listings/04-19-chebyshev-coef.mk56) |
+| 4.20: Laguerre polynomial Ln(x) | p.69–70 | corrected | [04-20-laguerre.asm](asm/04-20-laguerre.asm) | [.mk56](listings/04-20-laguerre.mk56) |
 
 ### Numerical methods (ch. 5)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| 5.1: System of n ≤ 4 linear equations | p.79 | corrected | [05-01-linsys.mk56](listings/05-01-linsys.mk56) |
-| 5.15: Root of x = f(x) by simple iteration, stopping at "machine zero" | p.89 | corrected | [05-15-iteration.mk56](listings/05-15-iteration.mk56) |
-| 5.16: Newton's method, stopping at machine zero | p.89 | corrected · known failure | [05-16-newton.mk56](listings/05-16-newton.mk56) |
-| 5.17: Newton's method, stopping when (x(n+1) − x(n))² < eps² | p.89 | verified | [05-17-newton-eps.mk56](listings/05-17-newton-eps.mk56) |
-| 5.22: Root by halving the interval (bisection) | p.92 | transcribed | [05-22-bisection.mk56](listings/05-22-bisection.mk56) |
-| 5.29: Quadratic equation | p.97 | transcribed | [05-29-quadratic.mk56](listings/05-29-quadratic.mk56) |
-| 5.30: Quadratic equation, reduced error for real roots | p.97 | transcribed | [05-30-quadratic-precise.mk56](listings/05-30-quadratic-precise.mk56) |
-| 5.32a: Roots of a 4th-degree equation | p.98–99 | corrected | [05-32-quartic.mk56](listings/05-32-quartic.mk56) |
-| 5.32b: Roots of a 5th-degree equation | p.98–99 | corrected | [05-32-quintic.mk56](listings/05-32-quintic.mk56) |
-| 5.46: Numerical integration by the trapezoid rule | p.107 | transcribed | [05-46-trapezoid.mk56](listings/05-46-trapezoid.mk56) |
-| 5.47: Numerical integration by Simpson's rule | p.107 | transcribed | [05-47-simpson.mk56](listings/05-47-simpson.mk56) |
-| 5.67: RC-circuit response (combined Euler method) | p.118 | transcribed | [05-67-rc-circuit.mk56](listings/05-67-rc-circuit.mk56) |
-| 5.80: Moments, mean, variance, asymmetry, excess | p.135 | transcribed | [05-80-moments.mk56](listings/05-80-moments.mk56) |
-| 5.81: Auxiliary coefficients U3, U4 | p.136 | transcribed | [05-81-u3-u4.mk56](listings/05-81-u3-u4.mk56) |
-| 5.82: Sample correlation coefficient | p.136 | transcribed | [05-82-correlation.mk56](listings/05-82-correlation.mk56) |
-| 5.85: Uniform random numbers, V = D(37V) | p.138 | transcribed | [05-85-random.mk56](listings/05-85-random.mk56) |
-| 5.86: Uniform random numbers, V = D(11V + π) | p.138 | transcribed | [05-86-random-pi.mk56](listings/05-86-random-pi.mk56) |
-| 5.87: Uniform random numbers in [a, b] | p.139 | transcribed | [05-87-random-ab.mk56](listings/05-87-random-ab.mk56) |
-| 5.88: Normal random numbers | p.139 | transcribed | [05-88-random-normal.mk56](listings/05-88-random-normal.mk56) |
-| 5.89: Least-squares line y = b0 + b1·x | p.140 | transcribed | [05-89-regression.mk56](listings/05-89-regression.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| 5.1: System of n ≤ 4 linear equations | p.79 | corrected | [05-01-linsys.asm](asm/05-01-linsys.asm) | [.mk56](listings/05-01-linsys.mk56) |
+| 5.15: Root of x = f(x) by simple iteration, stopping at "machine zero" | p.89 | corrected | [05-15-iteration.asm](asm/05-15-iteration.asm) | [.mk56](listings/05-15-iteration.mk56) |
+| 5.16: Newton's method, stopping at machine zero | p.89 | corrected · known failure | [05-16-newton.asm](asm/05-16-newton.asm) | [.mk56](listings/05-16-newton.mk56) |
+| 5.17: Newton's method, stopping when (x(n+1) − x(n))² < eps² | p.89 | verified | [05-17-newton-eps.asm](asm/05-17-newton-eps.asm) | [.mk56](listings/05-17-newton-eps.mk56) |
+| 5.22: Root by halving the interval (bisection) | p.92 | transcribed | [05-22-bisection.asm](asm/05-22-bisection.asm) | [.mk56](listings/05-22-bisection.mk56) |
+| 5.29: Quadratic equation | p.97 | transcribed | [05-29-quadratic.asm](asm/05-29-quadratic.asm) | [.mk56](listings/05-29-quadratic.mk56) |
+| 5.30: Quadratic equation, reduced error for real roots | p.97 | transcribed | [05-30-quadratic-precise.asm](asm/05-30-quadratic-precise.asm) | [.mk56](listings/05-30-quadratic-precise.mk56) |
+| 5.32a: Roots of a 4th-degree equation | p.98–99 | corrected | [05-32-quartic.asm](asm/05-32-quartic.asm) | [.mk56](listings/05-32-quartic.mk56) |
+| 5.32b: Roots of a 5th-degree equation | p.98–99 | corrected | [05-32-quintic.asm](asm/05-32-quintic.asm) | [.mk56](listings/05-32-quintic.mk56) |
+| 5.46: Numerical integration by the trapezoid rule | p.107 | transcribed | [05-46-trapezoid.asm](asm/05-46-trapezoid.asm) | [.mk56](listings/05-46-trapezoid.mk56) |
+| 5.47: Numerical integration by Simpson's rule | p.107 | transcribed | [05-47-simpson.asm](asm/05-47-simpson.asm) | [.mk56](listings/05-47-simpson.mk56) |
+| 5.67: RC-circuit response (combined Euler method) | p.118 | transcribed | [05-67-rc-circuit.asm](asm/05-67-rc-circuit.asm) | [.mk56](listings/05-67-rc-circuit.mk56) |
+| 5.80: Moments, mean, variance, asymmetry, excess | p.135 | transcribed | [05-80-moments.asm](asm/05-80-moments.asm) | [.mk56](listings/05-80-moments.mk56) |
+| 5.81: Auxiliary coefficients U3, U4 | p.136 | transcribed | [05-81-u3-u4.asm](asm/05-81-u3-u4.asm) | [.mk56](listings/05-81-u3-u4.mk56) |
+| 5.82: Sample correlation coefficient | p.136 | transcribed | [05-82-correlation.asm](asm/05-82-correlation.asm) | [.mk56](listings/05-82-correlation.mk56) |
+| 5.85: Uniform random numbers, V = D(37V) | p.138 | transcribed | [05-85-random.asm](asm/05-85-random.asm) | [.mk56](listings/05-85-random.mk56) |
+| 5.86: Uniform random numbers, V = D(11V + π) | p.138 | transcribed | [05-86-random-pi.asm](asm/05-86-random-pi.asm) | [.mk56](listings/05-86-random-pi.mk56) |
+| 5.87: Uniform random numbers in [a, b] | p.139 | transcribed | [05-87-random-ab.asm](asm/05-87-random-ab.asm) | [.mk56](listings/05-87-random-ab.mk56) |
+| 5.88: Normal random numbers | p.139 | transcribed | [05-88-random-normal.asm](asm/05-88-random-normal.asm) | [.mk56](listings/05-88-random-normal.mk56) |
+| 5.89: Least-squares line y = b0 + b1·x | p.140 | transcribed | [05-89-regression.asm](asm/05-89-regression.asm) | [.mk56](listings/05-89-regression.mk56) |
 
 ### Probability (ch. 6)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| 6.31: Probability integral Φ(y) by power series | p.167 | transcribed | [06-31-erf-series.mk56](listings/06-31-erf-series.mk56) |
-| 6.32: Φ(y) for y > 4 by asymptotic expansion | p.167 | transcribed | [06-32-erf-asymptotic.mk56](listings/06-32-erf-asymptotic.mk56) |
-| 6.33: Φ(y) for any y (series below 4, asymptotic from 4) | p.168 | transcribed | [06-33-erf-any.mk56](listings/06-33-erf-any.mk56) |
-| 6.34: Φ(x) = erf(x), 3-coefficient approximation (A–S 7.1.25) | p.168 | transcribed | [06-34-erf-approx3.mk56](listings/06-34-erf-approx3.mk56) |
-| 6.35: Φ(x) = erf(x), rounded-coefficient approximation | p.169 | transcribed | [06-35-erf-approx3-short.mk56](listings/06-35-erf-approx3-short.mk56) |
-| 6.36: Φ(x) = erf(x), 5-coefficient approximation (A–S 7.1.26) | p.169 | transcribed | [06-36-erf-approx5.mk56](listings/06-36-erf-approx5.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| 6.31: Probability integral Φ(y) by power series | p.167 | transcribed | [06-31-erf-series.asm](asm/06-31-erf-series.asm) | [.mk56](listings/06-31-erf-series.mk56) |
+| 6.32: Φ(y) for y > 4 by asymptotic expansion | p.167 | transcribed | [06-32-erf-asymptotic.asm](asm/06-32-erf-asymptotic.asm) | [.mk56](listings/06-32-erf-asymptotic.mk56) |
+| 6.33: Φ(y) for any y (series below 4, asymptotic from 4) | p.168 | transcribed | [06-33-erf-any.asm](asm/06-33-erf-any.asm) | [.mk56](listings/06-33-erf-any.mk56) |
+| 6.34: Φ(x) = erf(x), 3-coefficient approximation (A–S 7.1.25) | p.168 | transcribed | [06-34-erf-approx3.asm](asm/06-34-erf-approx3.asm) | [.mk56](listings/06-34-erf-approx3.mk56) |
+| 6.35: Φ(x) = erf(x), rounded-coefficient approximation | p.169 | transcribed | [06-35-erf-approx3-short.asm](asm/06-35-erf-approx3-short.asm) | [.mk56](listings/06-35-erf-approx3-short.mk56) |
+| 6.36: Φ(x) = erf(x), 5-coefficient approximation (A–S 7.1.26) | p.169 | transcribed | [06-36-erf-approx5.asm](asm/06-36-erf-approx5.asm) | [.mk56](listings/06-36-erf-approx5.mk56) |
 
 ### Engineering calculations (ch. 7)
 
-| Program | Book | Status | Listing |
-|---|---|---|---|
-| 7.8: Number of turns w of a coil on a pot (armoured) core (fig. 7.6) | p.179 | corrected | [07-08-coil-pot-core.mk56](listings/07-08-coil-pot-core.mk56) |
-| 7.9: Number of turns w of a coil with a closed core (fig. 7.7) | p.179–180 | corrected | [07-09-coil-closed-core.mk56](listings/07-09-coil-closed-core.mk56) |
-| 7.28: Rectifier working into a filter capacitor | p.190 | transcribed | [07-28-rectifier.mk56](listings/07-28-rectifier.mk56) |
-| 7.29: Transistor physical parameters from h-parameters | p.191 | transcribed | [07-29-transistor-h-to-phys.mk56](listings/07-29-transistor-h-to-phys.mk56) |
-| 7.30: Transistor h-parameters from physical parameters | p.192 | transcribed | [07-30-transistor-phys-to-h.mk56](listings/07-30-transistor-phys-to-h.mk56) |
-| 7.31: Amplifier stage, common base | p.194 | transcribed | [07-31-amp-common-base.mk56](listings/07-31-amp-common-base.mk56) |
-| 7.32: Amplifier stage, common emitter | p.195 | transcribed | [07-32-amp-common-emitter.mk56](listings/07-32-amp-common-emitter.mk56) |
-| 7.33: Amplifier stage, common collector | p.195 | transcribed | [07-33-amp-common-collector.mk56](listings/07-33-amp-common-collector.mk56) |
+| Program | Book | Status | MK56-ASM | Book listing |
+|---|---|---|---|---|
+| 7.8: Number of turns w of a coil on a pot (armoured) core (fig. 7.6) | p.179 | corrected | [07-08-coil-pot-core.asm](asm/07-08-coil-pot-core.asm) | [.mk56](listings/07-08-coil-pot-core.mk56) |
+| 7.9: Number of turns w of a coil with a closed core (fig. 7.7) | p.179–180 | corrected | [07-09-coil-closed-core.asm](asm/07-09-coil-closed-core.asm) | [.mk56](listings/07-09-coil-closed-core.mk56) |
+| 7.28: Rectifier working into a filter capacitor | p.190 | transcribed | [07-28-rectifier.asm](asm/07-28-rectifier.asm) | [.mk56](listings/07-28-rectifier.mk56) |
+| 7.29: Transistor physical parameters from h-parameters | p.191 | transcribed | [07-29-transistor-h-to-phys.asm](asm/07-29-transistor-h-to-phys.asm) | [.mk56](listings/07-29-transistor-h-to-phys.mk56) |
+| 7.30: Transistor h-parameters from physical parameters | p.192 | transcribed | [07-30-transistor-phys-to-h.asm](asm/07-30-transistor-phys-to-h.asm) | [.mk56](listings/07-30-transistor-phys-to-h.mk56) |
+| 7.31: Amplifier stage, common base | p.194 | transcribed | [07-31-amp-common-base.asm](asm/07-31-amp-common-base.asm) | [.mk56](listings/07-31-amp-common-base.mk56) |
+| 7.32: Amplifier stage, common emitter | p.195 | transcribed | [07-32-amp-common-emitter.asm](asm/07-32-amp-common-emitter.asm) | [.mk56](listings/07-32-amp-common-emitter.mk56) |
+| 7.33: Amplifier stage, common collector | p.195 | transcribed | [07-33-amp-common-collector.asm](asm/07-33-amp-common-collector.asm) | [.mk56](listings/07-33-amp-common-collector.mk56) |
 
 ## Removed entries
 

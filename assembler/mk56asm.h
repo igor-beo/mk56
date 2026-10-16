@@ -85,6 +85,14 @@ const uint8_t* asm_get_binary(const Assembler *as, size_t *out_size);
 /** Listing: address, codes, original notation, source line */
 size_t asm_get_listing(const Assembler *as, char *buffer, size_t buffer_size);
 
+/**
+ * MK56-ASM source for a program: one statement per line, labels for jump
+ * targets (Lnn) and subroutines (subnn), digit runs as number literals,
+ * and each statement's address, original keys and codes as a comment.
+ * Assembling the result gives the same steps back.
+ */
+size_t asm_to_source(const uint8_t *prog, size_t n, char *buffer, size_t buffer_size);
+
 /** Get error message, or NULL if no error */
 const char* asm_get_error(const Assembler *as);
 

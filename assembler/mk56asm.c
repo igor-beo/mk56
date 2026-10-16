@@ -468,6 +468,96 @@ size_t asm_get_listing(const Assembler *as, char *buffer, size_t buffer_size) {
     return off;
 }
 
+// ============================================================================
+// MK56-ASM SOURCE FROM MACHINE CODE
+// ============================================================================
+
+static bool is_mantissa_step(uint8_t c) { return c <= 9 || c == MK56_POINT; }
+
+/* Steps a.. that form one number literal, written to `lit`; 0 if none.
+ * Stops at labels so a jump target always starts a statement. */
+static int number_run(const uint8_t *prog, int a, int n, const char *label,
+                      char *lit, size_t size) {
+    char mant[16], exp[4] = "";
+    int b = a, mlen = 0, digits = 0, elen = 0;
+    bool point = false, neg = false, eneg = false;
+
+    while (b < n && is_mantissa_step(prog[b]) && (b == a || !label[b])) {
+        if (prog[b] == MK56_POINT) { if (point) break; point = true; mant[mlen++] = '.'; }
+        else { if (digits == 8) break; digits++; mant[mlen++] = (char)('0' + prog[b]); }
+        b++;
+    }
+    if (digits == 0) return 0;
+    mant[mlen] = '\0';
+    if (b < n && prog[b] == MK56_CHS && !label[b]) { neg = true; b++; }
+    if (b + 1 < n && prog[b] == MK56_EEX && !label[b] && prog[b + 1] <= 9 && !label[b + 1]) {
+        int e = b + 1;
+        while (e < n && prog[e] <= 9 && elen < 2 && !label[e]) exp[elen++] = (char)('0' + prog[e++]);
+        exp[elen] = '\0';
+        if (e < n && prog[e] == MK56_CHS && !label[e]) { eneg = true; e++; }
+        b = e;
+    }
+    snprintf(lit, size, "%s%s%s%s%s", neg ? "-" : "", mant, elen ? "e" : "", eneg ? "-" : "", exp);
+    return b - a;
+}
+
+size_t asm_to_source(const uint8_t *prog, size_t n, char *buffer, size_t buffer_size) {
+    char label[MK56_STEPS] = { 0 };     /* 'L' jump target, 's' subroutine */
+    bool start[MK56_STEPS] = { false };
+    int len = (int)(n < MK56_STEPS ? n : MK56_STEPS);
+    size_t off = 0;
+    buffer[0] = '\0';
+
+    for (int a = 0; a < len; a += mk56_op(prog[a])->has_addr ? 2 : 1) start[a] = true;
+    for (int a = 0; a < len; a++) {
+        const Mk56Op *op = mk56_op(prog[a]);
+        if (!start[a] || !op->has_addr || a + 1 >= len) continue;
+        int t = mk56_addr_decode(prog[a + 1]);
+        if (t >= 0 && t < len && start[t] && label[t] != 's')
+            label[t] = prog[a] == MK56_CALL ? 's' : 'L';
+    }
+
+    for (int a = 0; a < len; ) {
+        char stmt[48], lit[24];
+        int size = number_run(prog, a, len, label, lit, sizeof lit);
+        const Mk56Op *op = mk56_op(prog[a]);
+        if (size) {
+            snprintf(stmt, sizeof stmt, "%s", lit);
+        } else if (!op->valid) {
+            size = 1;
+            snprintf(stmt, sizeof stmt, ".STEP %02X", prog[a]);
+        } else {
+            size = mk56_disasm(prog, a, true, stmt, sizeof stmt);
+            int t = size == 2 ? mk56_addr_decode(prog[a + 1]) : -1;
+            if (t >= 0 && t < len && label[t])
+                snprintf(stmt, sizeof stmt, "%s %s%02d", op->mnem, label[t] == 's' ? "sub" : "L", t);
+        }
+        if (a + size > len) size = len - a;
+
+        char keys[96] = "", codes[48] = "";
+        size_t kl = 0, cl = 0;
+        for (int b = a; b < a + size; ) {
+            char k[40];
+            int s = mk56_disasm(prog, b, false, k, sizeof k);
+            if (b + s > a + size) s = a + size - b;
+            kl += (size_t)snprintf(keys + kl, sizeof keys - kl, "%s%s", kl ? " " : "", k);
+            for (int i = 0; i < s; i++)
+                cl += (size_t)snprintf(codes + cl, sizeof codes - cl, "%s%02X", cl ? " " : "", prog[b + i]);
+            b += s;
+        }
+
+        if (label[a] && off < buffer_size)
+            off += (size_t)snprintf(buffer + off, buffer_size - off, "%s%s%02d:\n",
+                                    a ? "\n" : "", label[a] == 's' ? "sub" : "L", a);
+        int pad = 14 - utf8_width(keys);
+        if (off < buffer_size)
+            off += (size_t)snprintf(buffer + off, buffer_size - off, "        %-16s; %02d  %s%*s %s\n",
+                                    stmt, a, keys, pad > 0 ? pad : 0, "", codes);
+        a += size;
+    }
+    return off < buffer_size ? off : buffer_size - 1;
+}
+
 const char* asm_get_error(const Assembler *as) {
     return as->has_error ? as->error_msg : NULL;
 }

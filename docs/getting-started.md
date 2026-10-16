@@ -55,6 +55,29 @@ Cyrillic and Latin lookalikes are both accepted, and so are common
 spellings such as `П→x 2` and `x²`. See
 [the language spec](../asm/MK56-ASM-SPEC.md#3-listing-syntax-mk56-files).
 
+To read the program, or to key it into a real calculator one step at a
+time, convert it to MK56-ASM:
+
+```bash
+./assembler/mk56asm circle.mk56 -s circle.asm
+```
+
+```
+        RCL R2          ; 00  ИП2            62
+        SQ              ; 01  Fx²            22
+        ENTER           ; 02  В↑             0E
+        PI              ; 03  Fπ             20
+        MUL             ; 04  ×              12
+        4               ; 05  4              04
+        DIV             ; 06  ÷              13
+        HALT            ; 07  С/П            50
+```
+
+Each line is one step: the instruction, then its address, the keys to press
+and the code the calculator shows in programming mode. Jump targets get
+labels (`L12:`, `sub42:`). The [program library](../programs/README.md)
+comes in both forms.
+
 ## The TUI
 
 | Key | Action |

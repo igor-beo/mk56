@@ -8,12 +8,14 @@ make
 ./mk56asm program.asm                       # writes program.bin
 ./mk56asm program.mk56 -o out.bin -l out.lst
 ./mk56asm program.asm -v                    # print the listing
+./mk56asm program.mk56 -s program.asm       # book listing -> MK56-ASM
 ```
 
 | Option | Meaning |
 |--------|---------|
 | `-o FILE` | Output binary (default: input name with `.bin`) |
 | `-l FILE` | Write a listing |
+| `-s FILE` | Write the program as MK56-ASM source (`-` for stdout) |
 | `-v` | Verbose; prints the listing |
 
 The file extension picks the syntax: `.mk56` is the original listing
@@ -31,6 +33,22 @@ ADDR  CODES             KEYS                      SOURCE
 04    02                2                         2               ; push 2
 05    13                ÷                         DIV             ; X = (e^x - 1/e^x) / 2
 06    50                С/П                       HALT            ; stop, result in X
+```
+
+## Converting a listing to MK56-ASM
+
+`-s` writes any program, whatever its input syntax, as MK56-ASM: one step
+per line, labels for jump targets (`L12`) and subroutines (`sub42`), and
+digit runs as number literals. The comment on each line gives the address,
+the keys as printed and the codes. The input's leading comments, including
+test directives, are copied. The result is checked by reassembling it, and
+`-s` fails if the program would change.
+
+```
+sub42:
+        RCL RD          ; 42  ИПd            6D
+        RCL RC          ; 43  ИПc            6C
+        MUL             ; 44  ×              12
 ```
 
 ## Errors
