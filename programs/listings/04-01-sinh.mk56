@@ -1,9 +1,0 @@
-; Program 4.1: Hyperbolic sine sh(x) = (eˣ − 1/eˣ)/2
-; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.64 (book61.pdf page 65)
-; Input: x in X.  Output: sh(x) in X.
-;
-; Book example: sh(1) = 1,1752012
-; @input 1
-; @expect X=1.1752012 tol=1e-5
-;
-00: Feˣ В↑ F1/x − 2 ÷ С/П

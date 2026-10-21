@@ -1,0 +1,98 @@
+; Program 7.33: Small-signal amplifier stage, common collector (fig. 7.11в, 7.12в)
+;   Rвх = rб + rк (rэ + Rн)/(rк (1 − a) + rэ + Rн),  KI = rк/(rк (1 − a) + rэ + Rн),
+;   KU = rк Rн/(rк (rэ + Rн) + rб (rк (1 − a) + rэ + Rн)),
+;   KE = rк Rн/(rк (rэ + Rн) + (rб + Rи)(rк (1 − a) + rэ + Rн)),
+;   Rвых = rэ + (rб + Rи) rк (1 − a)/(rк + rб + Rи)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.195 (book61.pdf page 196)
+; Input (as in 7.31): rб = R1, rэ = R2, rк = R3, Rи = R4, Rн = R5, a = R6, then В/О С/П.
+; Output: KE = R0 = X, KU = Ra, KI = Rb, Rвх = Rc, Rвых = Rd.
+;
+; Book example: rб = 400 Ohm, rэ = 25 Ohm, rк = 10^6 Ohm, Rи = 10^4 Ohm,
+;   Rн = 500 Ohm, a = 0,98 -> KU = 0,93771684, KE = 0,67708474, KI = 48,421071,
+;   Rвх = 25978,562 Ohm, Rвых = 230,85906 Ohm.
+; The printed KI is a misprint: rк/(rк (1 − a) + rэ + Rн) = 10^6/20525 = 48,721071
+; (expected value computed, not printed in the book).
+; @reg R1=400 R2=25 R3=1e6 R4=1e4 R5=500 R6=0.98
+; @run
+; @expect X=0.67708474
+; @expect Ra=0.93771684
+; @expect Rb=48.721071
+; @expect Rc=25978.562
+; @expect Rd=230.85906
+;
+; As printed:
+;   00: 1 ИП6 − ИП3 × П8 ИП2 ИП5 + П9
+;   10: + П7 ИП1 ИП4 + Пd × ИП9 ИП3 ×
+;   20: Пb + ИП3 ИП5 × Пa ↔ ÷ П0 ИПa
+;   30: ИП1 ИП7 × ИПb + ÷ Пa ИП3 ИП7 ÷
+;   40: Пb ИП3 ИП9 × ИП7 ÷ ИП1 + Пc ИПd
+;   50: ИП3 × 1 ИП6 − × ИПd ИП3 + ÷
+;   60: ИП2 + Пd ИП0 С/П
+;
+; Each line: instruction ; address, keys, codes
+
+        1               ; 00  1              01
+        RCL R6          ; 01  ИП6            66
+        SUB             ; 02  −              11
+        RCL R3          ; 03  ИП3            63
+        MUL             ; 04  ×              12
+        STO R8          ; 05  П8             48
+        RCL R2          ; 06  ИП2            62
+        RCL R5          ; 07  ИП5            65
+        ADD             ; 08  +              10
+        STO R9          ; 09  П9             49
+        ADD             ; 10  +              10
+        STO R7          ; 11  П7             47
+        RCL R1          ; 12  ИП1            61
+        RCL R4          ; 13  ИП4            64
+        ADD             ; 14  +              10
+        STO RD          ; 15  Пd             4D
+        MUL             ; 16  ×              12
+        RCL R9          ; 17  ИП9            69
+        RCL R3          ; 18  ИП3            63
+        MUL             ; 19  ×              12
+        STO RB          ; 20  Пb             4B
+        ADD             ; 21  +              10
+        RCL R3          ; 22  ИП3            63
+        RCL R5          ; 23  ИП5            65
+        MUL             ; 24  ×              12
+        STO RA          ; 25  Пa             4A
+        SWAP            ; 26  ↔              14
+        DIV             ; 27  ÷              13
+        STO R0          ; 28  П0             40
+        RCL RA          ; 29  ИПa            6A
+        RCL R1          ; 30  ИП1            61
+        RCL R7          ; 31  ИП7            67
+        MUL             ; 32  ×              12
+        RCL RB          ; 33  ИПb            6B
+        ADD             ; 34  +              10
+        DIV             ; 35  ÷              13
+        STO RA          ; 36  Пa             4A
+        RCL R3          ; 37  ИП3            63
+        RCL R7          ; 38  ИП7            67
+        DIV             ; 39  ÷              13
+        STO RB          ; 40  Пb             4B
+        RCL R3          ; 41  ИП3            63
+        RCL R9          ; 42  ИП9            69
+        MUL             ; 43  ×              12
+        RCL R7          ; 44  ИП7            67
+        DIV             ; 45  ÷              13
+        RCL R1          ; 46  ИП1            61
+        ADD             ; 47  +              10
+        STO RC          ; 48  Пc             4C
+        RCL RD          ; 49  ИПd            6D
+        RCL R3          ; 50  ИП3            63
+        MUL             ; 51  ×              12
+        1               ; 52  1              01
+        RCL R6          ; 53  ИП6            66
+        SUB             ; 54  −              11
+        MUL             ; 55  ×              12
+        RCL RD          ; 56  ИПd            6D
+        RCL R3          ; 57  ИП3            63
+        ADD             ; 58  +              10
+        DIV             ; 59  ÷              13
+        RCL R2          ; 60  ИП2            62
+        ADD             ; 61  +              10
+        STO RD          ; 62  Пd             4D
+        RCL R0          ; 63  ИП0            60
+        HALT            ; 64  С/П            50

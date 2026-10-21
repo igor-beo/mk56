@@ -1,0 +1,117 @@
+; Program 3.11: Addition of 4x3 matrices (any number of them)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.59 (book61.pdf page 60)
+; Matrix layout (element index = register number, P10 = Ra, P11 = Rb):
+;   |7 8 9; 4 5 6; 1 2 3; 0 10 11|
+; Input: first matrix in R0..Rb. С/П: the program shows the register number of the
+; next element (7, 8, 9, 4, 5, 6, 1, 2, 3, 0, 10, 11); key that element of the
+; next matrix and press С/П. Result m0..m11 accumulates in R0..Rb.
+;
+; Book check (no numbers printed): set every element to its register number and add
+; the same matrix again -> every register doubles.
+; @reg R0=0 R1=1 R2=2 R3=3 R4=4 R5=5 R6=6 R7=7 R8=8 R9=9 Ra=10 Rb=11
+; @run
+; @expect X=7
+; @input 7
+; @expect X=8
+; @input 8
+; @expect X=9
+; @input 9
+; @expect X=4
+; @input 4
+; @expect X=5
+; @input 5
+; @expect X=6
+; @input 6
+; @expect X=1
+; @input 1
+; @expect X=2
+; @input 2
+; @expect X=3
+; @input 3
+; @expect X=0
+; @input 0
+; @expect X=10
+; @input 10
+; @expect X=11
+; @input 11
+; @expect X=7
+; @expect R7=14
+; @expect R5=10
+; @expect R1=2
+; @expect R0=0
+; @expect Ra=20
+; @expect Rb=22
+;
+; As printed:
+;   00: 7 С/П ИП7 + П7 8 С/П ИП8 + П8
+;   10: 9 С/П ИП9 + П9 4 С/П ИП4 + П4
+;   20: 5 С/П ИП5 + П5 6 С/П ИП6 + П6
+;   30: 1 С/П ИП1 + П1 2 С/П ИП2 + П2
+;   40: 3 С/П ИП3 + П3 0 С/П ИП0 + П0
+;   50: 1 0 С/П ИПa + Пa 1 1 С/П ИПb
+;   60: + Пb БП 00
+;
+; Each line: instruction ; address, keys, codes
+
+L00:
+        7               ; 00  7              07
+        HALT            ; 01  С/П            50
+        RCL R7          ; 02  ИП7            67
+        ADD             ; 03  +              10
+        STO R7          ; 04  П7             47
+        8               ; 05  8              08
+        HALT            ; 06  С/П            50
+        RCL R8          ; 07  ИП8            68
+        ADD             ; 08  +              10
+        STO R8          ; 09  П8             48
+        9               ; 10  9              09
+        HALT            ; 11  С/П            50
+        RCL R9          ; 12  ИП9            69
+        ADD             ; 13  +              10
+        STO R9          ; 14  П9             49
+        4               ; 15  4              04
+        HALT            ; 16  С/П            50
+        RCL R4          ; 17  ИП4            64
+        ADD             ; 18  +              10
+        STO R4          ; 19  П4             44
+        5               ; 20  5              05
+        HALT            ; 21  С/П            50
+        RCL R5          ; 22  ИП5            65
+        ADD             ; 23  +              10
+        STO R5          ; 24  П5             45
+        6               ; 25  6              06
+        HALT            ; 26  С/П            50
+        RCL R6          ; 27  ИП6            66
+        ADD             ; 28  +              10
+        STO R6          ; 29  П6             46
+        1               ; 30  1              01
+        HALT            ; 31  С/П            50
+        RCL R1          ; 32  ИП1            61
+        ADD             ; 33  +              10
+        STO R1          ; 34  П1             41
+        2               ; 35  2              02
+        HALT            ; 36  С/П            50
+        RCL R2          ; 37  ИП2            62
+        ADD             ; 38  +              10
+        STO R2          ; 39  П2             42
+        3               ; 40  3              03
+        HALT            ; 41  С/П            50
+        RCL R3          ; 42  ИП3            63
+        ADD             ; 43  +              10
+        STO R3          ; 44  П3             43
+        0               ; 45  0              00
+        HALT            ; 46  С/П            50
+        RCL R0          ; 47  ИП0            60
+        ADD             ; 48  +              10
+        STO R0          ; 49  П0             40
+        10              ; 50  1 0            01 00
+        HALT            ; 52  С/П            50
+        RCL RA          ; 53  ИПa            6A
+        ADD             ; 54  +              10
+        STO RA          ; 55  Пa             4A
+        11              ; 56  1 1            01 01
+        HALT            ; 58  С/П            50
+        RCL RB          ; 59  ИПb            6B
+        ADD             ; 60  +              10
+        STO RB          ; 61  Пb             4B
+        JMP L00         ; 62  БП 00          51 00

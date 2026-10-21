@@ -15,8 +15,8 @@ the Б3-34. The project includes:
   printed** in Soviet books (`00: ИП2 Fx² В↑ Fπ × 4 ÷ С/П`), and converts
   one into the other;
 - the **first English translation** of the factory operating manual;
-- a **program library** of 72 programs from Дьяконов's 1985 handbook, each
-  as the book prints it and in readable MK56-ASM, every program with a test.
+- a **program library** of 72 programs from Дьяконов's 1985 handbook in
+  readable MK56-ASM, each with the book's listing as printed and a test.
 
 ```
 .asm / .mk56  ──▶  mk56asm  ──▶  .bin (one byte per step)  ──▶  mk56emu
@@ -29,7 +29,7 @@ make            # assembler/mk56asm and emulator/mk56emu (needs a C11 compiler a
 make test       # core tests plus every program with @expect lines
 
 ./emulator/mk56emu asm/examples/factorial.asm -c -i 5      # Display: 120,
-./emulator/mk56emu programs/asm/04-01-sinh.asm              # TUI
+./emulator/mk56emu programs/04-01-sinh.asm                  # TUI
 ```
 
 The [getting started guide](docs/getting-started.md) covers the first

@@ -41,8 +41,10 @@ ADDR  CODES             KEYS                      SOURCE
 per line, labels for jump targets (`L12`) and subroutines (`sub42`), and
 digit runs as number literals. The comment on each line gives the address,
 the keys as printed and the codes. The input's leading comments, including
-test directives, are copied. The result is checked by reassembling it, and
-`-s` fails if the program would change.
+test directives, are copied. For a `.mk56` input the original listing is
+kept under `; As printed:`, and `mk56test` checks that it matches the code.
+The result is checked by reassembling it, and `-s` fails if the program
+would change.
 
 ```
 sub42:
