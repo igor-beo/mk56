@@ -386,7 +386,7 @@ static void draw_status_bar(void) {
     wbkgd(ui.win_status, COLOR_PAIR(COL_STATUS));
     wattron(ui.win_status, COLOR_PAIR(COL_STATUS));
     
-    mvwprintw(ui.win_status, 0, 1, "");
+    wmove(ui.win_status, 0, 1);
     
     if (ui.mode == MODE_EDIT_PROGRAM) {
         // Edit mode hints
@@ -460,18 +460,24 @@ static void draw_stack_window(void) {
     wrefresh(ui.win_stack);
 }
 
-// Format register value to fit in fixed width
+// Format register value to fit in 7 columns, keeping as many digits as fit
 static void format_reg_value(char *buf, size_t size, double v) {
-    if (v == 0.0) {
-        snprintf(buf, size, "%7.6s", "0");
-    } else if (fabs(v) >= 1e7 || (fabs(v) < 0.001 && v != 0)) {
-        snprintf(buf, size, "%7.1e", v);  // e.g. "3.6e+06"
-    } else if (v == (double)(long)v) {
-        snprintf(buf, size, "%7.0f", v);  // integer
-    } else {
-        snprintf(buf, size, "%7.4g", v);  // decimal
+    for (int digits = 7; digits >= 1; digits--) {
+        char tmp[32], *e;
+        snprintf(tmp, sizeof tmp, "%.*g", digits, v);
+        // Compact the exponent: "e+07" -> "e7", "e-05" -> "e-5"
+        if ((e = strchr(tmp, 'e')) != NULL) {
+            char *d = e + 1, *src = e + 1;
+            if (*src == '+') src++;
+            else if (*src == '-') *d++ = *src++;
+            while (*src == '0' && src[1]) src++;
+            memmove(d, src, strlen(src) + 1);
+        }
+        if (strlen(tmp) <= 7 || digits == 1) {
+            snprintf(buf, size, "%.7s", tmp);
+            return;
+        }
     }
-    buf[7] = '\0';  // ensure max 7 chars
 }
 
 static void draw_registers_window(void) {
@@ -913,13 +919,9 @@ static void open_input_regval_dialog(void) {
     ui.input_pos = 0;
     
     char title[32];
-    char reg_name[4];
-    if (ui.edit_reg < 10) snprintf(reg_name, sizeof(reg_name), "R%d", ui.edit_reg);
-    else snprintf(reg_name, sizeof(reg_name), "R%c", 'A' + ui.edit_reg - 10);
-    
-    snprintf(title, sizeof(title), "Edit %s", reg_name);
+    snprintf(title, sizeof(title), "Edit R%s", mk56_reg_name(ui.edit_reg));
     char prompt[48];
-    snprintf(prompt, sizeof(prompt), "Enter value for %s:", reg_name);
+    snprintf(prompt, sizeof(prompt), "Enter value for R%s:", mk56_reg_name(ui.edit_reg));
     
     show_dialog(title, prompt, 40, 8);
     update_dialog_input();
