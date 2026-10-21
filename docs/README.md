@@ -8,6 +8,8 @@
 - [Machine reference](machine-reference.md): the instruction set and
   machine behaviour extracted from the manual, with page citations and the
   points the manual leaves open
+- [Checks against a real МК-56](hardware-checks.md): keystroke tests that
+  settle those open points on real hardware
 - [Original scans and sources](../references/README.md)
 
 ## The toolchain

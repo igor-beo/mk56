@@ -978,6 +978,7 @@ static void handle_dialog_input(int ch) {
             case MODE_DIALOG_INPUT_REGVAL:
                 if (ui.input_buf[0] && vm_value_ok(atof(ui.input_buf))) {
                     ui.vm->regs[ui.edit_reg] = atof(ui.input_buf);
+                    ui.vm->reg_code[ui.edit_reg] = false;
                 }
                 close_dialog();
                 break;

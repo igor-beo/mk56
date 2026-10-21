@@ -67,6 +67,13 @@ typedef struct {
     // Registers R0-R9, Ra-Rd
     double regs[MK56_NUM_REGISTERS];
 
+    // Values that are a code left by an indirect operation or F L0-L3.
+    // The display shows them with leading zeros: 00000013, (manual p.70,
+    // p.77, functional test #93-94). x→П stores a normal number (#95).
+    bool stack_code[MK56_STACK_SIZE];
+    bool lastx_code;
+    bool reg_code[MK56_NUM_REGISTERS];
+
     // Program memory
     uint8_t program[MK56_PROGRAM_SIZE];
     size_t program_size;                // steps loaded (memory is always 98)
