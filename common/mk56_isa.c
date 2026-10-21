@@ -297,7 +297,7 @@ int mk56_parse_key(char *const *tok, int n, int *consumed) {
 
     /* ...or written as a separate token: "F √", "К НОП", "К ПП 7". */
     if ((strcmp(c, "f") == 0 || strcmp(c, "k") == 0) && next) {
-        char joined[64], nc[48];
+        char joined[112], nc[48];
         canon(next, nc, sizeof nc);
         snprintf(joined, sizeof joined, "%s%s", c, nc);
         code = match(joined, n > 2 ? tok[2] : NULL, consumed);
