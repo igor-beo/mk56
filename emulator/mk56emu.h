@@ -114,6 +114,9 @@ bool vm_step(MK56VM *vm);
 /** Run until С/П, breakpoint, error or step limit */
 void vm_run(MK56VM *vm);
 
+/** True if |value| < 10^100, the calculator's range */
+bool vm_value_ok(double value);
+
 /** Key a number into X, as the user does before pressing С/П */
 void vm_input(MK56VM *vm, double value);
 

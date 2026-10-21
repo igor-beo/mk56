@@ -1,6 +1,6 @@
 /**
  * MK56-ASM Assembler - Command Line Interface
- * Build: gcc -O2 -Wall -std=c11 -o mk56asm mk56asm.c main.c -lm
+ * Build: make (gcc -O2 -std=c11 -I../common -o mk56asm mk56asm.c main.c ../common/mk56_isa.c -lm)
  */
 
 #include "mk56asm.h"
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 static void print_usage(const char *prog) {
     printf("MK56-ASM Assembler v1.0\n\n");
@@ -25,18 +26,17 @@ static char* read_file(const char *path, size_t *size) {
     FILE *f = fopen(path, "rb");
     if (!f) return NULL;
     
-    fseek(f, 0, SEEK_END);
-    long len = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    long len = -1;
+    if (fseek(f, 0, SEEK_END) == 0) len = ftell(f);
+    if (len < 0 || fseek(f, 0, SEEK_SET) != 0) { fclose(f); return NULL; }
     
-    char *buf = malloc(len + 1);
-    if (!buf) { fclose(f); return NULL; }
-    
-    fread(buf, 1, len, f);
+    char *buf = malloc((size_t)len + 1);
+    if (!buf || fread(buf, 1, (size_t)len, f) != (size_t)len) { free(buf); fclose(f); return NULL; }
     buf[len] = '\0';
     fclose(f);
+    if (strlen(buf) != (size_t)len) { free(buf); return NULL; }    /* NUL byte: not a text file */
     
-    if (size) *size = len;
+    if (size) *size = (size_t)len;
     return buf;
 }
 
@@ -48,42 +48,61 @@ static bool write_file(const char *path, const void *data, size_t size) {
     return true;
 }
 
+/* -s output, bounded */
+static char out[65536];
+static size_t out_len;
+static bool out_full;
+
+static void put(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    int n = out_full ? -1 : vsnprintf(out + out_len, sizeof out - out_len, fmt, ap);
+    va_end(ap);
+    if (n < 0 || (size_t)n >= sizeof out - out_len) out_full = true;
+    else out_len += (size_t)n;
+}
+
+static const char LEGEND[] = "; Each line: instruction ; address, keys, codes";
+
 /* -s: the input's leading comment block (description and test
  * directives), then the program as MK56-ASM, checked by reassembling. */
 static int write_source(const Assembler *as, const char *source, const char *path) {
-    static char out[65536];
-    size_t off = 0;
     const char *p = source;
     while (*p) {
         const char *s = p;
         while (*s == ' ' || *s == '\t') s++;
         if (*s != ';' && *s != '\n' && *s != '\r') break;
         const char *eol = strchr(p, '\n');
-        size_t len = eol ? (size_t)(eol - p) + 1 : strlen(p);
-        if (off + len < sizeof out) { memcpy(out + off, p, len); off += len; }
+        int len = (int)(eol ? (size_t)(eol - p) + 1 : strlen(p));
+        if (strncmp(s, LEGEND, sizeof LEGEND - 1) != 0) put("%.*s", len, p);
         p += len;
     }
+    while (out_len > 1 && out[out_len - 1] == '\n' && out[out_len - 2] == '\n') out[--out_len] = '\0';
     if (as->listing_syntax) {
         /* Keep the listing as printed, which mk56test checks against the code */
-        off += (size_t)snprintf(out + off, sizeof out - off, "; As printed:\n");
+        put("; As printed:\n");
         for (const char *q = p; *q; ) {
             const char *eol = strchr(q, '\n');
             size_t len = eol ? (size_t)(eol - q) : strlen(q);
             while (len && (q[len - 1] == '\r' || q[len - 1] == ' ')) len--;
             const char *t = q;
             while (len && (*t == ' ' || *t == '\t')) { t++; len--; }
-            if (len && *t != ';' && off + len + 8 < sizeof out)
-                off += (size_t)snprintf(out + off, sizeof out - off, ";   %.*s\n", (int)len, t);
+            if (len && *t != ';') put(";   %.*s\n", (int)len, t);
             q = eol ? eol + 1 : q + strlen(q);
         }
-        off += (size_t)snprintf(out + off, sizeof out - off, ";\n");
+        put(";\n");
     }
-    off += (size_t)snprintf(out + off, sizeof out - off,
-        "; Each line: instruction ; address, keys, codes\n\n");
+    put("%s\n\n", LEGEND);
 
     size_t n;
     const uint8_t *bin = asm_get_binary(as, &n);
-    off += asm_to_source(bin, n, out + off, sizeof out - off);
+    char code[16384];
+    asm_to_source(bin, n, code, sizeof code);
+    put("%s", code);
+    if (out_full) {
+        fprintf(stderr, "Error: source longer than %zu bytes\n", sizeof out);
+        return 1;
+    }
 
     static Assembler check;
     if (!asm_assemble(&check, out) || check.binary_size != n ||
@@ -93,7 +112,7 @@ static int write_source(const Assembler *as, const char *source, const char *pat
         return 1;
     }
     if (strcmp(path, "-") == 0) { fputs(out, stdout); return 0; }
-    if (!write_file(path, out, off)) {
+    if (!write_file(path, out, out_len)) {
         fprintf(stderr, "Error: Cannot write file: %s\n", path);
         return 1;
     }
@@ -132,12 +151,16 @@ int main(int argc, char **argv) {
     }
     
     // Generate default output path
-    char default_output[256];
+    char default_output[1024];
     if (!output_path) {
-        strncpy(default_output, input_path, sizeof(default_output) - 5);
-        char *dot = strrchr(default_output, '.');
-        if (dot) *dot = '\0';
-        strcat(default_output, ".bin");
+        const char *slash = strrchr(input_path, '/');
+        const char *dot = strrchr(input_path, '.');
+        size_t stem = dot && (!slash || dot > slash) ? (size_t)(dot - input_path) : strlen(input_path);
+        if (stem + 5 > sizeof default_output) {
+            fprintf(stderr, "Error: input path too long; use -o\n");
+            return 1;
+        }
+        snprintf(default_output, sizeof default_output, "%.*s.bin", (int)stem, input_path);
         output_path = default_output;
     }
     
@@ -184,9 +207,9 @@ int main(int argc, char **argv) {
     
     // Write listing
     if (listing_path) {
-        char listing[8192];
-        asm_get_listing(&as, listing, sizeof(listing));
-        if (!write_file(listing_path, listing, strlen(listing))) {
+        static char text[65536];
+        asm_get_listing(&as, text, sizeof text);
+        if (!write_file(listing_path, text, strlen(text))) {
             fprintf(stderr, "Error: Cannot write listing: %s\n", listing_path);
             return 1;
         }
@@ -195,9 +218,9 @@ int main(int argc, char **argv) {
     
     if (verbose) {
         printf("\nAssembly Listing:\n");
-        char listing[8192];
-        asm_get_listing(&as, listing, sizeof(listing));
-        printf("%s", listing);
+        static char text[65536];
+        asm_get_listing(&as, text, sizeof text);
+        printf("%s", text);
     }
     
     return 0;

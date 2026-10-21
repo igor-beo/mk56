@@ -103,6 +103,9 @@ static void entry_end(MK56VM *vm) {
     if (vm->entry.active) {
         vm->entry.active = false;
         vm->lift = true;
+        // A keyed number outside 1e-99..9,9999999e99 is ЕГГОГ (p.24)
+        if (!vm_value_ok(X)) set_error(vm, ERR_OVERFLOW);
+        else if (X != 0 && fabs(X) < 1e-99) set_error(vm, ERR_UNDERFLOW);
     }
 }
 
@@ -126,6 +129,7 @@ static void key_point(MK56VM *vm) {
     NumberEntry *e = &vm->entry;
     if (!e->active) entry_begin(vm);
     if (e->exp_mode || strchr(e->mant, '.')) return;
+    if (!e->mant[0]) e->digits = 1;         // the leading 0 takes a position
     strcat(e->mant, e->mant[0] ? "." : "0.");
     entry_update_x(vm);
 }
@@ -226,6 +230,7 @@ static void execute(MK56VM *vm, uint8_t op) {
     if (op == MK56_EEX) { key_eex(vm); return; }
 
     entry_end(vm);
+    if (vm->error != ERR_NONE) return;
     x = X;
 
     int hi = op >> 4, lo = op & 0x0F;
@@ -419,8 +424,18 @@ bool vm_step(MK56VM *vm) {
     vm->last_opcode = op;
     vm->cycles++;
 
+    double stack[MK56_STACK_SIZE], lastx = vm->lastx;
+    memcpy(stack, vm->stack, sizeof stack);
+
     if (!mk56_op(op)->valid) set_error(vm, ERR_INVALID_OPCODE);
     else execute(vm, op);
+
+    // Overflow leaves the stack as it was, like ÷0 does (inferred: the
+    // machine cannot hold the result, and 5.32 relies on an intact stack)
+    if (vm->error == ERR_OVERFLOW) {
+        memcpy(vm->stack, stack, sizeof stack);
+        vm->lastx = lastx;
+    }
 
     // An error stops a running program (inferred: Дьяконов p.22)
     if (vm->error != ERR_NONE) {
@@ -441,7 +456,17 @@ void vm_run(MK56VM *vm) {
     vm->state = VM_STOPPED;
 }
 
+/* A number the calculator can hold: |x| < 10^100 (manual p.5). */
+bool vm_value_ok(double value) {
+    return isfinite(value) && fabs(value) < 1e100;
+}
+
 void vm_input(MK56VM *vm, double value) {
+    if (!vm_value_ok(value)) {
+        set_error(vm, ERR_OVERFLOW);
+        vm->state = VM_ERROR;
+        return;
+    }
     if (vm->state == VM_ERROR) {
         vm->state = VM_STOPPED;
         vm->error = ERR_NONE;
@@ -486,6 +511,7 @@ const char* vm_error_str(VMError err) {
 void vm_format_display(const MK56VM *vm, char *buf, size_t size) {
     if (vm->state == VM_ERROR) { snprintf(buf, size, "ЕГГОГ"); return; }
     double x = vm->stack[0];
+    if (!vm_value_ok(x)) { snprintf(buf, size, "ЕГГОГ"); return; }
     if (x == 0) { snprintf(buf, size, "0,"); return; }
 
     char e[32], digits[9];
@@ -503,8 +529,8 @@ void vm_format_display(const MK56VM *vm, char *buf, size_t size) {
         snprintf(buf, size, "%s%.*s,%s", sign, exp + 1, digits, frac);
     } else {
         for (int i = 7; i > 0 && digits[i] == '0'; i--) digits[i] = '\0';
-        snprintf(buf, size, "%s%c,%s %c%02d", sign, digits[0], digits + 1,
-                 exp < 0 ? '-' : ' ', abs(exp));
+        snprintf(buf, size, "%s%c,%s %s%02d", sign, digits[0], digits + 1,
+                 exp < 0 ? "-" : "", abs(exp));
     }
 }
 

@@ -36,6 +36,7 @@ static void emit(Assembler *as, uint8_t code, int line) {
 
 static bool is_identifier(const char *s) {
     if (!isalpha((unsigned char)s[0]) && s[0] != '_') return false;
+    if (strlen(s) >= MK56_MAX_LABEL_LEN) return false;
     for (; *s; s++)
         if (!isalnum((unsigned char)*s) && *s != '_') return false;
     return true;
@@ -44,6 +45,17 @@ static bool is_identifier(const char *s) {
 static bool is_unsigned_int(const char *s) {
     if (!*s) return false;
     for (; *s; s++) if (!isdigit((unsigned char)*s)) return false;
+    return true;
+}
+
+/* Value of an unsigned decimal token; anything above 999 reads as 999. */
+static int small_int(const char *s) {
+    return strlen(s) > 3 ? 999 : atoi(s);
+}
+
+static bool too_long_label(Assembler *as, const char *tok, int line) {
+    if (strlen(tok) < MK56_MAX_LABEL_LEN) return false;
+    set_error(as, line, "Label longer than 63 characters: %.40s...", tok);
     return true;
 }
 
@@ -64,11 +76,13 @@ static void define_label(Assembler *as, const char *name, int line) {
 /* "NN:" asserts the address of the next step; "name:" defines a label. */
 static void address_marker(Assembler *as, const char *tok, int line) {
     if (is_unsigned_int(tok)) {
-        if (atoi(tok) != as->current_address) {
+        if (small_int(tok) != as->current_address) {
             char msg[64];
             snprintf(msg, sizeof msg, "%s: is at address %02d", tok, as->current_address);
             set_error(as, line, "Address mismatch: %s", msg);
         }
+    } else if (too_long_label(as, tok, line)) {
+        return;
     } else if (is_identifier(tok)) {
         define_label(as, tok, line);
     } else {
@@ -80,9 +94,11 @@ static void address_marker(Assembler *as, const char *tok, int line) {
 static void emit_address(Assembler *as, const char *tok, int line) {
     if (!tok) { set_error(as, line, "Missing address%s", ""); return; }
     if (is_unsigned_int(tok)) {
-        int addr = atoi(tok);
+        int addr = small_int(tok);
         if (addr >= MK56_STEPS) { set_error(as, line, "Address out of range 00-97: %s", tok); return; }
         emit(as, mk56_addr_encode(addr), line);
+    } else if (too_long_label(as, tok, line)) {
+        return;
     } else if (is_identifier(tok)) {
         if (as->fixup_count >= MK56_MAX_FIXUPS) { set_error(as, line, "Too many label references%s", ""); return; }
         Fixup *f = &as->fixups[as->fixup_count++];
@@ -297,6 +313,15 @@ static int tokenize(char *s, char **tok) {
     return n;
 }
 
+static void listing_line(Assembler *as, int start, int line, const char *text) {
+    if (as->line_count >= MK56_MAX_LINES) return;
+    ListingLine *l = &as->lines[as->line_count++];
+    l->address = start;
+    l->steps = as->current_address - start;
+    l->source_line = line;
+    snprintf(l->source_text, sizeof l->source_text, "%s", text);
+}
+
 /* Returns false at .END */
 static bool parse_line(Assembler *as, const char *text, int line) {
     char buf[MK56_MAX_LINE_LEN];
@@ -317,12 +342,22 @@ static bool parse_line(Assembler *as, const char *text, int line) {
         if (strcmp(d, "LISTING") == 0) as->listing_syntax = true;
         else if (strcmp(d, "ASM") == 0) as->listing_syntax = false;
         else if (strcmp(d, "ORG") == 0) {
-            int addr = n > 1 ? atoi(tok[1]) : -1;
+            int addr = n > 1 && is_unsigned_int(tok[1]) ? small_int(tok[1]) : -1;
             if (addr < 0 || addr >= MK56_STEPS) set_error(as, line, ".ORG needs an address 00-97%s", "");
             else as->current_address = addr;
         } else if (strcmp(d, "STEP") == 0) {
-            if (n < 2) set_error(as, line, ".STEP needs a code%s", "");
-            else emit(as, (uint8_t)strtol(tok[1], NULL, 16), line);
+            char *end = NULL;
+            long code = n > 1 ? strtol(tok[1], &end, 16) : -1;
+            if (n < 2 || *end || code < 0 || code > 0xFF)
+                set_error(as, line, ".STEP needs a hex code 00-FF%s", "");
+            else {
+                int start = as->current_address;
+                emit(as, (uint8_t)code, line);
+                listing_line(as, start, line, text);
+            }
+        } else if (strcmp(d, "EQU") != 0 && strcmp(d, "ASSERT") != 0 &&
+                   strcmp(d, "TRACE") != 0 && strcmp(d, "BREAK") != 0) {
+            set_error(as, line, "Unknown directive: %s", tok[0]);
         }
         /* .EQU, .ASSERT, .TRACE, .BREAK: accepted, ignored */
         return true;
@@ -345,13 +380,7 @@ static bool parse_line(Assembler *as, const char *text, int line) {
         if (i < n && !as->has_error) asm_statement(as, tok + i, n - i, line);
     }
 
-    if (as->line_count < MK56_MAX_LINES) {
-        ListingLine *l = &as->lines[as->line_count++];
-        l->address = start;
-        l->steps = as->current_address - start;
-        l->source_line = line;
-        snprintf(l->source_text, sizeof l->source_text, "%s", text);
-    }
+    listing_line(as, start, line, text);
     return true;
 }
 
@@ -447,7 +476,7 @@ size_t asm_get_listing(const Assembler *as, char *buffer, size_t buffer_size) {
         const ListingLine *l = &as->lines[i];
         if (l->steps == 0) continue;
 
-        char codes[64] = "", keys[256] = "";
+        char codes[320] = "", keys[1024] = "";
         size_t cl = 0, kl = 0;
         for (int a = l->address; a < l->address + l->steps; ) {
             char k[40];
@@ -501,17 +530,24 @@ static int number_run(const uint8_t *prog, int a, int n, const char *label,
     return b - a;
 }
 
-size_t asm_to_source(const uint8_t *prog, size_t n, char *buffer, size_t buffer_size) {
+/* A jump with its address step present and valid takes 2 steps. */
+static bool has_valid_addr(const uint8_t *prog, int a, int len) {
+    return mk56_op(prog[a])->has_addr && a + 1 < len && mk56_addr_decode(prog[a + 1]) >= 0;
+}
+
+size_t asm_to_source(const uint8_t *program, size_t n, char *buffer, size_t buffer_size) {
     char label[MK56_STEPS] = { 0 };     /* 'L' jump target, 's' subroutine */
     bool start[MK56_STEPS] = { false };
+    uint8_t prog[MK56_STEPS] = { 0 };
     int len = (int)(n < MK56_STEPS ? n : MK56_STEPS);
     size_t off = 0;
+    if (buffer_size == 0) return 0;
     buffer[0] = '\0';
+    memcpy(prog, program, (size_t)len);
 
-    for (int a = 0; a < len; a += mk56_op(prog[a])->has_addr ? 2 : 1) start[a] = true;
+    for (int a = 0; a < len; a += has_valid_addr(prog, a, len) ? 2 : 1) start[a] = true;
     for (int a = 0; a < len; a++) {
-        const Mk56Op *op = mk56_op(prog[a]);
-        if (!start[a] || !op->has_addr || a + 1 >= len) continue;
+        if (!start[a] || !has_valid_addr(prog, a, len)) continue;
         int t = mk56_addr_decode(prog[a + 1]);
         if (t >= 0 && t < len && start[t] && label[t] != 's')
             label[t] = prog[a] == MK56_CALL ? 's' : 'L';
@@ -523,7 +559,7 @@ size_t asm_to_source(const uint8_t *prog, size_t n, char *buffer, size_t buffer_
         const Mk56Op *op = mk56_op(prog[a]);
         if (size) {
             snprintf(stmt, sizeof stmt, "%s", lit);
-        } else if (!op->valid) {
+        } else if (!op->valid || (op->has_addr && !has_valid_addr(prog, a, len))) {
             size = 1;
             snprintf(stmt, sizeof stmt, ".STEP %02X", prog[a]);
         } else {
@@ -549,6 +585,7 @@ size_t asm_to_source(const uint8_t *prog, size_t n, char *buffer, size_t buffer_
         if (label[a] && off < buffer_size)
             off += (size_t)snprintf(buffer + off, buffer_size - off, "%s%s%02d:\n",
                                     a ? "\n" : "", label[a] == 's' ? "sub" : "L", a);
+        if (stmt[0] == '.') snprintf(keys, sizeof keys, "%s", op->valid ? op->key : "?");
         int pad = 14 - utf8_width(keys);
         if (off < buffer_size)
             off += (size_t)snprintf(buffer + off, buffer_size - off, "        %-16s; %02d  %s%*s %s\n",

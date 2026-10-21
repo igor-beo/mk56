@@ -5,7 +5,7 @@ original manual (p.51–55; see the [translation](../docs/manual/06-programming-
 Every program step is one code; jumps, calls, conditionals and loops are
 followed by a second step holding a two-digit address (`БП 42` = `51 42`).
 
-This table is generated from [`common/mk56_isa.c`](../common/mk56_isa.c), the
+This table matches [`common/mk56_isa.c`](../common/mk56_isa.c), the
 single opcode table used by the assembler, the emulator and the TUI.
 
 **Conventions.** *X1* is the previous-result register (recalled with F Bx).

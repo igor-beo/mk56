@@ -20,3 +20,7 @@ See [asm/MK56-ASM-SPEC.md](../../asm/MK56-ASM-SPEC.md) for the language.
 2. Restart VS Code.
 
 For development, open this folder in VS Code and press `F5`.
+
+The extension claims every `.asm` file. If you also work with other
+assembly languages, pick the language per file with "Change Language Mode",
+or remove `.asm` from `package.json`.

@@ -313,6 +313,197 @@ static void test_arithmetic_digits(void) {
     CHECK_TRUE("0.4·π·25·2.25 = 70.685831", vm_get_x(&vm) == 70.685831);
 }
 
+/* ---- manual examples in automatic mode ---------------------------------- */
+
+/* ---- automatic-mode keystrokes (public API only) ---------------------- */
+/* Press one programmable key as the user would in АВТ: run it as a single
+ * step from a scratch cell and keep the PC where it was. Not for БП/В/О/С/П/ПП. */
+static void press(MK56VM *vm, uint8_t op) {
+    uint8_t pc = vm->pc, saved = vm->program[96];
+    vm->program[96] = op;
+    vm->pc = 96;
+    vm_step(vm);
+    vm->program[96] = saved;
+    vm->pc = pc;
+}
+#define PRESS(vm, ...) do { const uint8_t k_[] = { __VA_ARGS__ };            \
+    for (size_t i_ = 0; i_ < sizeof k_; i_++) press(vm, k_[i_]); } while (0)
+
+#define CHECK_DISPLAY(name, vm, want) do {                                  \
+    char b_[32]; vm_format_display(vm, b_, sizeof b_); checks++;            \
+    if (strcmp(b_, want) != 0) { failures++;                                \
+        printf("  FAIL %s: shows \"%s\", want \"%s\"\n", name, b_, want); } \
+} while (0)
+
+#define CHECK_STACK(name, vm, t, z, y, x) do {                              \
+    CHECK_NUM(name " T", (vm)->stack[3], t); CHECK_NUM(name " Z", (vm)->stack[2], z); \
+    CHECK_NUM(name " Y", (vm)->stack[1], y); CHECK_NUM(name " X", (vm)->stack[0], x); \
+} while (0)
+
+enum { PT = MK56_POINT, CHS = MK56_CHS, EEX = MK56_EEX, CX = MK56_CLX,
+       UP = MK56_ENTER, ADD = MK56_ADD, SUB = MK56_SUB, MUL = MK56_MUL,
+       DIV = MK56_DIV, SWP = MK56_SWAP, ROT = MK56_ROT, BX = MK56_LASTX };
+
+/* p.22-24: entry, ВП, /-/ in the exponent, 8-digit lock, ЕГГОГ recovery */
+static void test_entry_p22(void) {
+    MK56VM vm;
+    puts("p.22-24: number entry");
+    vm_init(&vm); PRESS(&vm, 1, 4, 8, PT, 1, 2, CHS);
+    CHECK_DISPLAY("148,12 /-/", &vm, "-148,12");
+    PRESS(&vm, EEX, 1, 5, CHS);
+    CHECK_NUM("-148,12 ВП 15 /-/", vm_get_x(&vm), -148.12e-15);
+    vm_init(&vm); PRESS(&vm, 1, 4, 8, PT, 1, 2, CHS, EEX, 4, UP);
+    CHECK_DISPLAY("В↑ normalises", &vm, "-1481200,");
+    vm_init(&vm); PRESS(&vm, EEX, 1, 2, 3);           /* mantissa 0 -> 1; 1 shifts out */
+    CHECK_NUM("ВП on 0, exponent 23", vm_get_x(&vm), 1e23);
+    vm_init(&vm); PRESS(&vm, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    CHECK_NUM("9th digit locked", vm_get_x(&vm), 12345678);
+    vm_init(&vm); PRESS(&vm, 4, CHS, MK56_SQRT);
+    CHECK_DISPLAY("4 /-/ F√", &vm, "ЕГГОГ");
+    PRESS(&vm, 2, 5);
+    CHECK_DISPLAY("then 25", &vm, "25,");
+}
+
+/* p.29-30: chain calculations, exact printed digits */
+static void test_chain_p29(void) {
+    MK56VM vm;
+    puts("p.29-30: chain calculations");
+    vm_init(&vm);
+    PRESS(&vm, 2, 2, 0, MK56_INV, 4, 0, 0, 0, MK56_INV, ADD);
+    CHECK_DISPLAY("1/220+1/4000", &vm, "4,7954545 -03");
+    PRESS(&vm, 5, 6, 0, MK56_INV, ADD, 1, 2, 0, 0, MK56_INV, ADD);
+    CHECK_DISPLAY("+1/560+1/1200", &vm, "7,414502 -03");
+    PRESS(&vm, MK56_INV);
+    CHECK_DISPLAY("R total", &vm, "134,87082");
+    vm_init(&vm);
+    PRESS(&vm, 1, 2, 0, 0, 0, UP, 2, DIV, MK56_PI, DIV, 5, 0, DIV);
+    CHECK_DISPLAY("L = 12000/(2πf)", &vm, "38,197186");
+    vm_init(&vm); PRESS(&vm, 0, PT, 2, CHS, UP);
+    CHECK_DISPLAY("-0,2 В↑", &vm, "-2, -01");
+    PRESS(&vm, 4, MK56_POW);
+    CHECK_DISPLAY("4^-0,2", &vm, "7,5785828 -01");
+}
+
+/* p.36-43: stack movement tables */
+static void test_stack_p36(void) {
+    MK56VM vm;
+    puts("p.36-43: stack movement");
+    vm_init(&vm); PRESS(&vm, 4, UP, 3, UP, 2, UP, 1);
+    CHECK_STACK("4В↑3В↑2В↑1", &vm, 4, 3, 2, 1);
+    PRESS(&vm, UP);  CHECK_STACK("В↑", &vm, 3, 2, 1, 1);
+    PRESS(&vm, ROT); CHECK_STACK("F⟳", &vm, 1, 3, 2, 1);
+    PRESS(&vm, ROT); CHECK_STACK("F⟳ again", &vm, 1, 1, 3, 2);
+    PRESS(&vm, SWP); CHECK_STACK("↔", &vm, 1, 1, 2, 3);
+    PRESS(&vm, CX);  CHECK_STACK("Cx", &vm, 1, 1, 2, 0);
+    PRESS(&vm, 3, 7, 5); CHECK_STACK("375 after Cx: no lift", &vm, 1, 1, 2, 375);
+    PRESS(&vm, MK56_SQRT); CHECK_NUM("X1 = 375 (p.38)", vm.lastx, 375);
+
+    vm_init(&vm); PRESS(&vm, 4, UP, UP, UP, 1, 6, MUL, ROT);
+    CHECK_STACK("constant 16·4 then F⟳ (p.40)", &vm, 64, 4, 4, 4);
+    PRESS(&vm, 2, 3); CHECK_STACK("digit after F⟳ lifts", &vm, 4, 4, 4, 23);
+    PRESS(&vm, MUL);  CHECK_NUM("23·4", vm_get_x(&vm), 92);
+
+    vm_init(&vm); vm.stack[0] = 35;  /* p.41: Y35 after (12+3)·7÷3 */
+    vm.lift = true;
+    PRESS(&vm, 3, UP, 7, UP, 3, UP, 1, 2);
+    CHECK_STACK("four numbers (p.42)", &vm, 3, 7, 3, 12);
+    PRESS(&vm, ADD); CHECK_STACK("+ (T duplicated)", &vm, 3, 3, 7, 15);
+    PRESS(&vm, MUL, SWP, DIV); CHECK_STACK("× ↔ ÷", &vm, 3, 3, 3, 35);
+    CHECK_NUM("X1 = 3", vm.lastx, 3);
+}
+
+/* p.45-48: X1, F Bx and F⟳ with sin 2° (degrees). Values from the
+ * machine differ in the last digit, so check the stack movement. */
+static void test_x1_p45(void) {
+    MK56VM vm;
+    puts("p.45-48: X1 / F Bx");
+    vm_init(&vm); vm.angle = ANGLE_DEG;
+    vm.stack[0] = 35; vm.stack[1] = vm.stack[2] = vm.stack[3] = 3;
+    vm.lastx = 3; vm.lift = true;
+    PRESS(&vm, 1, 4, UP, 2, MK56_SIN);
+    CHECK_NUM("X1 = 2", vm.lastx, 2);
+    PRESS(&vm, MUL);
+    double s = vm.lastx, p = vm_get_x(&vm);
+    CHECK_APPROX("sin 2°", s, 3.4899495e-2);
+    PRESS(&vm, BX);  CHECK_STACK("F Bx lifts", &vm, 3, 35, p, s);
+    PRESS(&vm, ROT); CHECK_STACK("F⟳ restores", &vm, s, 3, 35, p);
+    PRESS(&vm, 4, SUB); CHECK_NUM("X1 = 4", vm.lastx, 4);
+    PRESS(&vm, BX, DIV);
+    CHECK_APPROX("[(14 sin 2°)-4]/4", vm_get_x(&vm), -8.7785177e-1);
+    CHECK_STACK("final stack", &vm, 3, 3, 35, vm_get_x(&vm));
+}
+
+/* p.77-78: К x→П and К П→x from the keyboard */
+static void test_indirect_keys_p77(void) {
+    MK56VM vm;
+    puts("p.77-78: К x→П / К П→x");
+    vm_init(&vm);
+    PRESS(&vm, 1, 4, MK56_STO + 0, MK56_K_STO + 0);
+    CHECK_NUM("R0 = 13", vm.regs[0], 13);
+    CHECK_NUM("Rd = 14", vm.regs[13], 14);
+    PRESS(&vm, 5, MK56_K_STO + 0);
+    CHECK_NUM("R0 = 12", vm.regs[0], 12);
+    CHECK_NUM("Rc = 5", vm.regs[12], 5);
+    vm_init(&vm);
+    vm.regs[4] = 4; vm.regs[5] = 10; vm.regs[6] = 20; vm.regs[7] = 30;
+    PRESS(&vm, MK56_K_RCL + 4); CHECK_NUM("К П→x4 = R5", vm_get_x(&vm), 10);
+    PRESS(&vm, MK56_K_RCL + 4); CHECK_NUM("К П→x4 = R6", vm_get_x(&vm), 20);
+    CHECK_NUM("R4 = 6", vm.regs[4], 6);
+}
+
+/* Appendix p.96-100: functional test program, tests 14-102. */
+static void test_functional_test(void) {
+    static const uint8_t code[] = {
+        0xB0, 0x5D, 0x13, 0x5B, 0x09, 0x01, 0x07, 0x43, 0x83, 0x6D, 0x13,
+        0x51, 0x03, 0x60, 0x51, 0x00, 0x12, 0x67, 0x10, 0x58, 0x25, 0x5A,
+        0x25, 0x51, 0x27, 0x51, 0x21, 0xB4, 0x5C, 0x31, 0x54, 0x5E, 0x35,
+        0x51, 0x39, 0x53, 0x54, 0x59, 0x33, 0x69, 0x11, 0x57, 0x60, 0x04,
+        0x07, 0x46, 0x14, 0x96, 0xE6, 0x76, 0xC6, 0x22, 0x51, 0x57, 0x21,
+        0x23, 0x52, 0x06, 0x02, 0x4B, 0xAB, 0x50, 0x0F, 0x16, 0x52
+    };
+    MK56VM vm;
+    puts("appendix: functional test 14-102");
+    load(&vm, code, sizeof code);
+    vm.stack[0] = 99.999552;                      /* after test 13 */
+    PRESS(&vm, CX, MK56_STO + 4, 1, 4, MK56_STO + 0);
+    run(&vm);                                     /* 86 В/О, 87 С/П */
+    CHECK_TRUE("#87 halted", vm.state == VM_HALTED);
+    CHECK_APPROX("#87 e^x", vm_get_x(&vm), 6.187848e-5);
+    PRESS(&vm, ROT);         CHECK_DISPLAY("#88", &vm, "62,");
+    PRESS(&vm, ROT);         CHECK_APPROX("#89", vm_get_x(&vm), 93.902651);
+    PRESS(&vm, ROT);         CHECK_DISPLAY("#90", &vm, "47,");
+    PRESS(&vm, MK56_RCL + 1); CHECK_DISPLAY("#91", &vm, "10,428571");
+    PRESS(&vm, MK56_RCL + 2); CHECK_DISPLAY("#92", &vm, "-99999999,");
+    CHECK_NUM("#93 R3", vm.regs[3], 1);
+    CHECK_NUM("#94 R4", vm.regs[4], 1);
+    CHECK_NUM("#95 R5", vm.regs[5], 6);
+    CHECK_NUM("#96 R8", vm.regs[8], 0);
+    CHECK_NUM("#97 Ra", vm.regs[10], 0);
+    PRESS(&vm, MK56_RCL + 13, CHS); CHECK_DISPLAY("#99", &vm, "-14,");
+    PRESS(&vm, MK56_SQRT);   CHECK_DISPLAY("#100", &vm, "ЕГГОГ");
+    PRESS(&vm, CX);          CHECK_DISPLAY("#101", &vm, "0,");
+    PRESS(&vm, EEX);         CHECK_NUM("#102 ВП", vm_get_x(&vm), 1);
+}
+
+/* p.24: range limits */
+static void test_range_p24(void) {
+    MK56VM vm;
+    puts("p.24: overflow / underflow");
+    vm_init(&vm); PRESS(&vm, 1, EEX, 9, 9, CHS, UP, 1, 0, DIV);
+    CHECK_TRUE("underflow -> ЕГГОГ", vm.state == VM_ERROR);
+    CHECK_NUM("underflow sets X = 0", vm_get_x(&vm), 0);
+    vm_init(&vm); PRESS(&vm, 1, EEX, 9, 9, MK56_SQ);
+    CHECK_TRUE("overflow -> ЕГГОГ", vm.state == VM_ERROR);
+    CHECK_NUM("overflow keeps X", vm_get_x(&vm), 1e99);
+    vm_init(&vm); PRESS(&vm, 5, 0, EEX, 9, 9, UP);
+    CHECK_TRUE("keyed 5e100 -> ЕГГОГ", vm.state == VM_ERROR);
+    vm_init(&vm); PRESS(&vm, PT, 1, 2, 3, 4, 5, 6, 7, 8);
+    CHECK_NUM(",12345678: leading 0 takes a digit", vm_get_x(&vm), 0.1234567);
+    vm_init(&vm); PRESS(&vm, 6, PT, 0, 2, EEX, 2, 3);
+    PRESS(&vm, UP);
+    CHECK_DISPLAY("6,02 ВП 23 (p.48)", &vm, "6,02 23");
+}
+
 int main(void) {
     test_indirect_jumps_table9();
     test_conditionals();
@@ -328,6 +519,13 @@ int main(void) {
     test_mean_table20();
     test_ballistic_table22();
     test_arithmetic_digits();
+    test_entry_p22();
+    test_chain_p29();
+    test_stack_p36();
+    test_x1_p45();
+    test_indirect_keys_p77();
+    test_functional_test();
+    test_range_p24();
     printf("\n%d/%d checks passed\n", checks - failures, checks);
     return failures ? 1 : 0;
 }

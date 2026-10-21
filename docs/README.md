@@ -5,6 +5,9 @@
 - **[Operating manual — English translation](manual/README.md)**: the
   factory manual, translated in full, with the code table, example programs
   and the functional test.
+- [Machine reference](machine-reference.md): the instruction set and
+  machine behaviour extracted from the manual, with page citations and the
+  points the manual leaves open
 - [Original scans and sources](../references/README.md)
 
 ## The toolchain
