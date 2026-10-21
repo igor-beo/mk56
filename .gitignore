@@ -5,6 +5,7 @@
 *.out
 *.bin
 *.lst
+*.dSYM/
 
 # Compiled binaries (keep source, not outputs)
 assembler/mk56asm

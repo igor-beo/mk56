@@ -439,16 +439,46 @@ static void test_indirect_keys_p77(void) {
     puts("p.77-78: К x→П / К П→x");
     vm_init(&vm);
     PRESS(&vm, 1, 4, MK56_STO + 0, MK56_K_STO + 0);
+    CHECK_DISPLAY("К x→П 0", &vm, "14,");
     CHECK_NUM("R0 = 13", vm.regs[0], 13);
     CHECK_NUM("Rd = 14", vm.regs[13], 14);
+    PRESS(&vm, MK56_RCL + 0);  CHECK_DISPLAY("П→x 0", &vm, "00000013,");
+    PRESS(&vm, MK56_RCL + 13); CHECK_DISPLAY("П→x d", &vm, "14,");
     PRESS(&vm, 5, MK56_K_STO + 0);
     CHECK_NUM("R0 = 12", vm.regs[0], 12);
     CHECK_NUM("Rc = 5", vm.regs[12], 5);
+    PRESS(&vm, MK56_RCL + 0);  CHECK_DISPLAY("П→x 0 again", &vm, "00000012,");
+    PRESS(&vm, MK56_RCL + 12); CHECK_DISPLAY("П→x c", &vm, "5,");
     vm_init(&vm);
-    vm.regs[4] = 4; vm.regs[5] = 10; vm.regs[6] = 20; vm.regs[7] = 30;
-    PRESS(&vm, MK56_K_RCL + 4); CHECK_NUM("К П→x4 = R5", vm_get_x(&vm), 10);
-    PRESS(&vm, MK56_K_RCL + 4); CHECK_NUM("К П→x4 = R6", vm_get_x(&vm), 20);
+    PRESS(&vm, 4, MK56_STO + 4, 1, 0, MK56_STO + 5, 2, 0, MK56_STO + 6, 3, 0, MK56_STO + 7);
+    PRESS(&vm, MK56_K_RCL + 4); CHECK_DISPLAY("К П→x 4 = R5", &vm, "10,");
+    PRESS(&vm, MK56_RCL + 4);   CHECK_DISPLAY("П→x 4", &vm, "00000005,");
+    PRESS(&vm, MK56_K_RCL + 4); CHECK_DISPLAY("К П→x 4 = R6", &vm, "20,");
+    PRESS(&vm, MK56_RCL + 4);   CHECK_DISPLAY("П→x 4 again", &vm, "00000006,");
     CHECK_NUM("R4 = 6", vm.regs[4], 6);
+    /* A code is an ordinary number to arithmetic */
+    PRESS(&vm, 1, ADD);         CHECK_DISPLAY("code + 1", &vm, "7,");
+    PRESS(&vm, MK56_RCL + 4, 1, SWP);
+    CHECK_DISPLAY("↔ moves the code", &vm, "00000006,");
+    PRESS(&vm, 3, MK56_STO + 4, MK56_RCL + 4);
+    CHECK_DISPLAY("x→П replaces the code", &vm, "3,");
+}
+
+/* p.70: after table 9 the registers hold modified addresses. */
+static void test_codes_p70(void) {
+    static const uint8_t code[] = {
+        0x04, 0x0E, 0x83, 0x21, 0x02, 0x10, 0x84,
+        0x10, 0x03, 0x12, 0x8A, 0x11, 0x50
+    };
+    MK56VM vm;
+    puts("p.70: modified addresses show leading zeros");
+    load(&vm, code, sizeof code);
+    vm.regs[3] = 5; vm.regs[4] = 7; vm.regs[10] = 12;
+    run(&vm);
+    vm.state = VM_STOPPED;
+    press(&vm, MK56_RCL + 3);  CHECK_DISPLAY("П→x 3", &vm, "00000004,");
+    press(&vm, MK56_RCL + 4);  CHECK_DISPLAY("П→x 4", &vm, "00000008,");
+    press(&vm, MK56_RCL + 10); CHECK_DISPLAY("П→x a", &vm, "00000012,");
 }
 
 /* Appendix p.96-100: functional test program, tests 14-102. */
@@ -474,11 +504,12 @@ static void test_functional_test(void) {
     PRESS(&vm, ROT);         CHECK_DISPLAY("#90", &vm, "47,");
     PRESS(&vm, MK56_RCL + 1); CHECK_DISPLAY("#91", &vm, "10,428571");
     PRESS(&vm, MK56_RCL + 2); CHECK_DISPLAY("#92", &vm, "-99999999,");
-    CHECK_NUM("#93 R3", vm.regs[3], 1);
-    CHECK_NUM("#94 R4", vm.regs[4], 1);
-    CHECK_NUM("#95 R5", vm.regs[5], 6);
-    CHECK_NUM("#96 R8", vm.regs[8], 0);
-    CHECK_NUM("#97 Ra", vm.regs[10], 0);
+    PRESS(&vm, MK56_RCL + 3); CHECK_DISPLAY("#93", &vm, "00000001,");
+    PRESS(&vm, MK56_RCL + 4); CHECK_DISPLAY("#94", &vm, "00000001,");
+    PRESS(&vm, MK56_RCL + 5); CHECK_DISPLAY("#95", &vm, "6,");
+    PRESS(&vm, MK56_RCL + 8); CHECK_DISPLAY("#96", &vm, "0,");
+    PRESS(&vm, MK56_RCL + 10); CHECK_DISPLAY("#97", &vm, "0,");
+    PRESS(&vm, MK56_RCL + 13); CHECK_DISPLAY("#98", &vm, "14,");
     PRESS(&vm, MK56_RCL + 13, CHS); CHECK_DISPLAY("#99", &vm, "-14,");
     PRESS(&vm, MK56_SQRT);   CHECK_DISPLAY("#100", &vm, "ЕГГОГ");
     PRESS(&vm, CX);          CHECK_DISPLAY("#101", &vm, "0,");
@@ -524,6 +555,7 @@ int main(void) {
     test_stack_p36();
     test_x1_p45();
     test_indirect_keys_p77();
+    test_codes_p70();
     test_functional_test();
     test_range_p24();
     printf("\n%d/%d checks passed\n", checks - failures, checks);

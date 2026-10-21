@@ -181,7 +181,7 @@ The **modified** value is then used as the target address or register number ("�
   - p.69–70: R3 = 5, then `К БП 3` jumps to **04**.
 - **Register number mapping:** 0–9 → R0–R9, 10 → a, 11 → b, 12 → c, 13 → d (Table 12, p.76) [M].
 - **Indirect conditionals (p.70 §6.3.6):** if the condition **fails**, modify the register and jump to the modified address. If it **holds**, go on to the next step and **do not modify** the register [M]. Functional test (addr 47–50) confirms both cases.
-- **Storage format after modification:** the register then holds an unnormalised integer that displays with leading zeros, e.g. `00000004,` `00000012,` (p.70, p.77, p.78, p.82; test #93–94). **Even an "unchanged" R7–Rd register is rewritten this way:** Ra = 12 shows as `00000012,` after `К БП a` (p.70) [M].
+- **Storage format after modification:** the register then holds an unnormalised integer that displays with leading zeros, e.g. `00000004,` `00000012,` (p.70, p.77, p.78, p.82; test #93–94). **Even an "unchanged" R7–Rd register is rewritten this way:** Ra = 12 shows as `00000012,` after `К БП a` (p.70) [M]. The `FL` loop counters are left the same way (test #93: R3 = `00000001,` after `F L3`). Storing with `x→П` writes a normal number: the functional test stores the code in R0 into R5 with `К x→П 0`, and R5 shows `6,` (test #95) [M].
 - **Integer part only?** The manual does not say. It only shows integer examples. See §8 [INF/book61].
 
 ### 2.7 Codes the manual does not cover
@@ -774,7 +774,7 @@ None of these has a code (p.15, p.17–18, p.50–51). The manual mentions no Ш
 | Digit entry after x→П, ↔, F Bx | Lifts (x→П ends entry) | B3-34 family. No manual example separates the two cases |
 | ↔ and X1 | book61 Fig. 1.4г shows X1 unchanged. Some B3-34 references say ↔ copies X to X1. The manual is silent | Unresolved |
 | В↑, /-/ and X1 | X1 unchanged | Manual silent |
-| xʸ and Y | **Manual (p.27 §5.6.1):** a two-operand op that drops the stack. Community reports on Б3-34/МК-61 hardware say xʸ keeps Y. Every manual program here works under either model | Potential conflict. Needs ROM/hardware check |
+| xʸ and Y | **Manual (p.27 §5.6.1):** a two-operand op that drops the stack. Community reports on Б3-34/МК-61 hardware say xʸ keeps Y. Every manual program here works under either model | Settled by the manual, which is the authority: drops |
 | PC after 97 | Wraps to 00 ("выполняется все 98 шагов", p.59, implies running through all of memory) | B3-34 family |
 | Return-stack overflow / underflow | Not described. The stack depth is 5 [M] | — |
 | В/О in auto mode and the return stack | Manual: sets PC = 00 only. Whether it also clears the return stack is not stated | — |

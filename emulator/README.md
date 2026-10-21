@@ -68,6 +68,8 @@ From the manual (page numbers in [`mk56emu.c`](mk56emu.c)):
   `1,7857142 -03`)
 - conditionals that jump when the condition fails; `FL0`–`FL3` loops
 - indirect operations with pre-decrement (R0–R3) and pre-increment (R4–R6)
+- a register modified by an indirect operation or an `FL` loop shows
+  leading zeros when recalled (`00000013,`); `x→П` stores a normal number
 - radians, degrees and grads; ЕГГОГ for invalid operations, overflow and
   underflow
 
@@ -88,9 +90,11 @@ family or makes a stated choice:
 - `FL0`–`FL3` keep counting below −99999999, and a loop that starts at a
   fraction or a negative number never ends
 
-Not emulated: registers changed by an indirect operation show leading zeros
-on the real display (`00000013,`); the emulator shows `13,`. The display
-while a number is being keyed is not modelled digit by digit.
+- a recalled code keeps its leading zeros when it moves through the stack
+  (`↔`, `В↑`, `F⟳`, `F Bx`); any calculation gives a normal number
+
+Not emulated: the display while a number is being keyed is not modelled
+digit by digit.
 
 Transcendental functions use IEEE double and are then truncated. Their last
 digit or two can differ from the real chip. A program that never stops is

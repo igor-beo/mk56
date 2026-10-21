@@ -55,12 +55,15 @@ static void lift_stack(MK56VM *vm) {
     vm->stack[3] = vm->stack[2];
     vm->stack[2] = vm->stack[1];
     vm->stack[1] = vm->stack[0];
+    memmove(&vm->stack_code[1], &vm->stack_code[0], 3 * sizeof(bool));
 }
 
 /* Y←Z, Z←T; T keeps its value (p.39). */
 static void drop_stack(MK56VM *vm) {
     vm->stack[1] = vm->stack[2];
     vm->stack[2] = vm->stack[3];
+    vm->stack_code[1] = vm->stack_code[2];
+    vm->stack_code[2] = vm->stack_code[3];
 }
 
 static double to_rad(const MK56VM *vm, double a) {
@@ -89,6 +92,7 @@ static void entry_update_x(MK56VM *vm) {
     snprintf(buf, sizeof buf, "%s%se%s%d", e->neg ? "-" : "",
              e->mant[0] ? e->mant : "0", e->exp_neg ? "-" : "", e->exp);
     X = strtod(buf, NULL);
+    vm->stack_code[0] = false;
 }
 
 static void entry_begin(MK56VM *vm) {
@@ -136,7 +140,7 @@ static void key_point(MK56VM *vm) {
 
 static void key_chs(MK56VM *vm) {
     NumberEntry *e = &vm->entry;
-    if (!e->active) { X = -X; return; }
+    if (!e->active) { X = -X; vm->stack_code[0] = false; return; }
     if (e->exp_mode) e->exp_neg = !e->exp_neg;
     else e->neg = !e->neg;
     entry_update_x(vm);
@@ -160,14 +164,18 @@ static void key_eex(MK56VM *vm) {
 /* One-operand op: X ← f(X), old X to X1 (p.25, p.38). */
 static void unary(MK56VM *vm, double r) {
     vm->lastx = X;
+    vm->lastx_code = vm->stack_code[0];
     X = fix8(vm, r);
+    vm->stack_code[0] = false;
 }
 
 /* Two-operand op: X ← Y∘X, stack drops, old X to X1 (p.39). */
 static void binary(MK56VM *vm, double r) {
     vm->lastx = X;
+    vm->lastx_code = vm->stack_code[0];
     drop_stack(vm);
     X = fix8(vm, r);
+    vm->stack_code[0] = false;
 }
 
 static void return_push(MK56VM *vm, uint8_t addr) {
@@ -189,12 +197,14 @@ static uint8_t return_pop(MK56VM *vm) {
 /* Indirect addressing (p.67 §6.3.5): the register is modified first -
  * R0-R3 minus 1, R4-R6 plus 1, R7-Rd unchanged - and the new value is the
  * address or register number. Only the integer part is used (inferred,
- * Дьяконов p.22). */
+ * Дьяконов p.22). The register then holds a code, shown with leading
+ * zeros even for R7-Rd (p.70: Ra = 00000012, after К БП a). */
 static int indirect(MK56VM *vm, int r) {
     double v = trunc(vm->regs[r]);
     if (r <= 3) v -= 1;
     else if (r <= 6) v += 1;
     vm->regs[r] = v;
+    vm->reg_code[r] = true;
     return (v >= 0 && v < 1000) ? (int)v : -1;
 }
 
@@ -235,8 +245,19 @@ static void execute(MK56VM *vm, uint8_t op) {
 
     int hi = op >> 4, lo = op & 0x0F;
 
-    if (hi == 0x4) { vm->regs[lo] = x; vm->lift = true; return; }
-    if (hi == 0x6) { lift_stack(vm); X = vm->regs[lo]; vm->lift = true; return; }
+    if (hi == 0x4) {
+        vm->regs[lo] = x;
+        vm->reg_code[lo] = false;           // stored normalised (test #95)
+        vm->lift = true;
+        return;
+    }
+    if (hi == 0x6) {
+        lift_stack(vm);
+        X = vm->regs[lo];
+        vm->stack_code[0] = vm->reg_code[lo];
+        vm->lift = true;
+        return;
+    }
 
     if (hi >= 0x7) {                         // К-prefixed indirect ops
         int idx;
@@ -254,13 +275,18 @@ static void execute(MK56VM *vm, uint8_t op) {
          * loads give 0 (inferred). */
         case 0xB:                            // К x→П
             idx = indirect(vm, lo);
-            if (idx >= 0 && idx < MK56_NUM_REGISTERS) vm->regs[idx] = x;
+            if (idx >= 0 && idx < MK56_NUM_REGISTERS) {
+                vm->regs[idx] = x;
+                vm->reg_code[idx] = false;
+            }
             vm->lift = true;
             return;
         case 0xD:                            // К П→x
             idx = indirect(vm, lo);
             lift_stack(vm);
-            X = (idx >= 0 && idx < MK56_NUM_REGISTERS) ? vm->regs[idx] : 0;
+            bool exists = idx >= 0 && idx < MK56_NUM_REGISTERS;
+            X = exists ? vm->regs[idx] : 0;
+            vm->stack_code[0] = exists && vm->reg_code[idx];
             vm->lift = true;
             return;
         default:                             // К x?0: register untouched if it holds (p.70)
@@ -271,9 +297,13 @@ static void execute(MK56VM *vm, uint8_t op) {
     }
 
     switch (op) {
-    case MK56_CLX:   X = 0; vm->lift = false; return;
+    case MK56_CLX:   X = 0; vm->stack_code[0] = false; vm->lift = false; return;
     case MK56_ENTER: lift_stack(vm); vm->lift = false; return;
-    case MK56_LASTX: lift_stack(vm); X = vm->lastx; break;
+    case MK56_LASTX:
+        lift_stack(vm);
+        X = vm->lastx;
+        vm->stack_code[0] = vm->lastx_code;
+        break;
 
     case MK56_ADD: binary(vm, y + x); break;
     case MK56_SUB: binary(vm, y - x); break;
@@ -286,7 +316,13 @@ static void execute(MK56VM *vm, uint8_t op) {
         if (x <= 0) { set_error(vm, ERR_DOMAIN); return; }
         binary(vm, pow(x, y));
         break;
-    case MK56_SWAP: X = y; Y = x; break;
+    case MK56_SWAP: {
+        bool code = vm->stack_code[0];
+        X = y; Y = x;
+        vm->stack_code[0] = vm->stack_code[1];
+        vm->stack_code[1] = code;
+        break;
+    }
 
     case MK56_EXP10: unary(vm, pow(10.0, x)); break;
     case MK56_EXP:   unary(vm, exp(x)); break;
@@ -307,8 +343,10 @@ static void execute(MK56VM *vm, uint8_t op) {
 
     case MK56_PI:                            // also saves X to X1 (Дьяконов p.23)
         vm->lastx = x;
+        vm->lastx_code = vm->stack_code[0];
         lift_stack(vm);
         X = MK56_PI_CONST;
+        vm->stack_code[0] = false;
         break;
     case MK56_SQRT:
         if (x < 0) { set_error(vm, ERR_DOMAIN); return; }
@@ -319,13 +357,18 @@ static void execute(MK56VM *vm, uint8_t op) {
         if (x == 0) { set_error(vm, ERR_DOMAIN); return; }
         unary(vm, 1.0 / x);
         break;
-    case MK56_ROT:                           // X→T, T→Z, Z→Y, Y→X; X to X1 (p.35)
+    case MK56_ROT: {                         // X→T, T→Z, Z→Y, Y→X; X to X1 (p.35)
+        bool code = vm->stack_code[0];
         vm->lastx = x;
+        vm->lastx_code = code;
         X = y;
         Y = vm->stack[2];
         vm->stack[2] = vm->stack[3];
         vm->stack[3] = x;
+        memmove(&vm->stack_code[0], &vm->stack_code[1], 3 * sizeof(bool));
+        vm->stack_code[3] = code;
         break;
+    }
 
     case MK56_HALT:
         vm->state = VM_HALTED;
@@ -351,11 +394,13 @@ static void execute(MK56VM *vm, uint8_t op) {
         return;
 
     /* F Ln: Rn - 1; if not zero store it and jump, else fall through with
-     * Rn left at 1. 0 - 1 shows -99999999 (p.82, functional test #92-93). */
+     * Rn left at 1. 0 - 1 shows -99999999 (p.82, functional test #92-93).
+     * The counter becomes a code like an indirect address: test #93 shows
+     * R3 = 00000001, after the F L3 loop. */
     case MK56_FL0: case MK56_FL1: case MK56_FL2: case MK56_FL3: {
         int r = op == MK56_FL0 ? 0 : op == MK56_FL1 ? 1 : op == MK56_FL2 ? 2 : 3;
         double v = vm->regs[r] == 0 ? -99999999.0 : vm->regs[r] - 1;
-        if (v != 0) { vm->regs[r] = v; jump(vm, target); }
+        if (v != 0) { vm->regs[r] = v; vm->reg_code[r] = true; jump(vm, target); }
         else vm->pc = wrap(pc + 2);
         return;
     }
@@ -425,7 +470,9 @@ bool vm_step(MK56VM *vm) {
     vm->cycles++;
 
     double stack[MK56_STACK_SIZE], lastx = vm->lastx;
+    bool stack_code[MK56_STACK_SIZE], lastx_code = vm->lastx_code;
     memcpy(stack, vm->stack, sizeof stack);
+    memcpy(stack_code, vm->stack_code, sizeof stack_code);
 
     if (!mk56_op(op)->valid) set_error(vm, ERR_INVALID_OPCODE);
     else execute(vm, op);
@@ -434,7 +481,9 @@ bool vm_step(MK56VM *vm) {
     // machine cannot hold the result, and 5.32 relies on an intact stack)
     if (vm->error == ERR_OVERFLOW) {
         memcpy(vm->stack, stack, sizeof stack);
+        memcpy(vm->stack_code, stack_code, sizeof stack_code);
         vm->lastx = lastx;
+        vm->lastx_code = lastx_code;
     }
 
     // An error stops a running program (inferred: Дьяконов p.22)
@@ -474,6 +523,7 @@ void vm_input(MK56VM *vm, double value) {
     entry_end(vm);
     if (vm->lift) lift_stack(vm);
     X = fix8(vm, value);
+    vm->stack_code[0] = false;
     vm->lift = true;
 }
 
@@ -507,11 +557,16 @@ const char* vm_error_str(VMError err) {
 }
 
 /* Natural form for 1 <= |x| < 10^8, otherwise mantissa and exponent;
- * trailing zeros dropped, decimal comma (manual p.21, p.26-28). */
+ * trailing zeros dropped, decimal comma (manual p.21, p.26-28). A code
+ * left by an indirect operation keeps all 8 digits: 00000013, (p.70). */
 void vm_format_display(const MK56VM *vm, char *buf, size_t size) {
     if (vm->state == VM_ERROR) { snprintf(buf, size, "ЕГГОГ"); return; }
     double x = vm->stack[0];
     if (!vm_value_ok(x)) { snprintf(buf, size, "ЕГГОГ"); return; }
+    if (vm->stack_code[0] && x >= 0 && x <= 99999999) {
+        snprintf(buf, size, "%08ld,", (long)x);
+        return;
+    }
     if (x == 0) { snprintf(buf, size, "0,"); return; }
 
     char e[32], digits[9];
