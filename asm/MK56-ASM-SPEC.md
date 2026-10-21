@@ -63,6 +63,9 @@ loop:   RCL R1
 - Comments start with `;` or `//`.
 - `NN:` (a number instead of a label) asserts that the next step is at
   address NN, and assembly fails if it is not.
+- Limits: a source line is at most 255 bytes (a Cyrillic letter takes 2),
+  a label at most 63 characters, and a program at most 128 labels.
+  Unknown directives are errors.
 
 ### 2.1 Operands
 
@@ -179,6 +182,7 @@ The assembler writes a raw binary of one byte per step (up to 98 bytes).
 
 ```
 ADDR  CODES             KEYS                      SOURCE
+==============================================================================
 00    62 22 0E 20 12 04 13 50  ИП2 Fx² В↑ Fπ × 4 ÷ С/П   00: ИП2 Fx² В↑ Fπ × 4 ÷ С/П
 ```
 

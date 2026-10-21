@@ -1,7 +1,12 @@
 # Audit of `programs/*.md` against Дьяконов (1985)
 
+> **Historical record.** This audit checked the library as it stood in
+> October 2026, when it was a set of chapter files (`programs/01-…md` to
+> `08-…md`, since removed). Program file names below are the current ones.
+> "ISA doc" means [docs/machine-reference.md](../docs/machine-reference.md).
+
 **Source checked:** V.P. Дьяконов, *Справочник по расчётам на микрокалькуляторах* (Наука, 1985), `references/book61.pdf`.
-**Page citations:** "p.N" is the **printed** book page. In this scan, printed page N is **book61.pdf page N+1** (1-based). The page numbers in `programs/README.md` are printed pages and are correct, with one exception: 4.12 starts on p.66, not p.67.
+**Page citations:** "p.N" is the **printed** book page. In this scan, printed page N is **book61.pdf page N+1** (1-based). The page numbers in `programs/README.md` are printed pages. The one error found, 4.12 starting on p.66 rather than p.67, has been fixed.
 **Status (after the audit):** all 45 listings are run by `make test` on the
 real assembler and emulator. 44 reproduce the book's results. 5.16 is a known
 failure (`@xfail`): it stops only when a Newton correction is exactly zero,
@@ -9,7 +14,7 @@ and that depends on the real chip's sin digits. The 18 NOT-FOUND entries were
 then replaced by 27 programs transcribed from the book; see
 [Transcriptions that replace the NOT-FOUND entries](#transcriptions-that-replace-the-not-found-entries).
 
-**Method:** each listing was read from page images rendered at 260–400 dpi, not from the OCR layer, which mangles key names and digits. Each `.mk56` listing was then run through a scratch simulator of the ISA doc semantics (§2–3) with the book's worked example. All listings reproduce the book's printed results except 5.16; the reason is explained below. The simulator is scratch work only. The repo emulator and assembler were not built or run.
+**Method:** each listing was read from page images rendered at 260–400 dpi, not from the OCR layer, which mangles key names and digits. Each `.mk56` listing was then run through a scratch simulator of the ISA doc semantics (§2–3) with the book's worked example. All listings reproduce the book's printed results except 5.16; the reason is explained below. The simulator was scratch work only; the repo emulator and assembler were not used for the audit itself. All programs now run on them in `make test`.
 **Output:** 45 listings (now `programs/*.asm`), covering 43 audited entries. The sinc example and 5.32 each have two listings.
 
 ## Status counts
@@ -22,7 +27,7 @@ then replaced by 27 programs transcribed from the book; see
 | NOT-MK56 | 0 |
 | **Total entries in programs/*.md** | **61** |
 
-None of the entries is NOT-MK56. Every program in the book that we transcribed is written for the Б3-34/МК-54/МК-56 in RPN. The book itself says the МК-56 is fully compatible with the Б3-34. The TI-58C/59 programs are only in the book's appendices, and none of our entries came from there. **The README claim that the МК-56 "uses algebraic logic similar to B3-38" and that programs need "translation to algebraic notation" is false and must be removed.** The same applies to the "translate for MK-56 / algebraic mode" usage notes in every chapter file.
+None of the entries is NOT-MK56. Every program in the book that we transcribed is written for the Б3-34/МК-54/МК-56 in RPN. The book itself says the МК-56 is fully compatible with the Б3-34. The TI-58C/59 programs are only in the book's appendices, and none of our entries came from there. The old README claimed that the МК-56 "uses algebraic logic similar to B3-38" and that programs need "translation to algebraic notation". That was false and has been removed, together with the "translate for MK-56 / algebraic mode" notes in the chapter files.
 
 ## Systematic transcription error: ÷ was read as +
 

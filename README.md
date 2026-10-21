@@ -82,9 +82,10 @@ verified.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+MIT License with a mandatory attribution requirement. See [LICENSE](LICENSE).
 
-**Attribution Required**: When using this software, please credit:
+**Attribution is required.** If you use, modify or distribute this
+software, credit the author in your README, documentation or credits:
 > Igor Berezhnoi - MK-56 Development Environment
 
 ## Contributing

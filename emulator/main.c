@@ -29,10 +29,9 @@ static void print_usage(const char *prog) {
     printf("  -a MODE     Angle switch: rad (default), deg, grad\n");
     printf("  -d          Disassemble and exit\n");
     printf("  -h          Show this help\n");
-    printf("\nTUI Controls:\n");
-    printf("  SPACE/s  Step    r  Run     R  Reset\n");
-    printf("  i  Input         b  Break   q  Quit\n");
-    printf("  ?  Help\n");
+    printf("\nTUI keys:\n");
+    printf("  F7 Step   F8 Run   F9 Reset   F5 Input X   F4 Edit step\n");
+    printf("  F6 Breakpoint   G Angle   F1 Help   F10 Menu   Q Quit\n");
 }
 
 static void console_run(MK56VM *vm) {
@@ -81,7 +80,8 @@ static void disassemble(MK56VM *vm) {
         char disasm[32], key[40], codes[8];
         int size = vm_disasm(vm, addr, disasm, sizeof(disasm));
         mk56_disasm(vm->program, addr, false, key, sizeof(key));
-        if (size == 2) snprintf(codes, sizeof codes, "%02X %02X", vm->program[addr], vm->program[addr + 1]);
+        if (size == 2) snprintf(codes, sizeof codes, "%02X %02X", vm->program[addr],
+                                vm->program[(addr + 1) % MK56_PROGRAM_SIZE]);
         else snprintf(codes, sizeof codes, "%02X", vm->program[addr]);
         
         // Pad the UTF-8 key column by characters, not bytes
@@ -146,6 +146,10 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) {
             input_value = atof(argv[++i]);
             has_input = true;
+            if (!vm_value_ok(input_value)) {
+                fprintf(stderr, "Error: -i %s is outside the calculator's range (|x| < 1e100)\n", argv[i]);
+                return 1;
+            }
         }
         else if ((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "-a") == 0) && i + 1 < argc) {
             // Handled after VM init
@@ -191,6 +195,10 @@ int main(int argc, char **argv) {
                 else if (c >= 'a' && c <= 'd') reg = 10 + c - 'a';
                 
                 char *eq = strchr(spec, '=');
+                if (reg >= 0 && eq && !vm_value_ok(atof(eq + 1))) {
+                    fprintf(stderr, "Error: -r %s is outside the calculator's range (|x| < 1e100)\n", spec);
+                    return 1;
+                }
                 if (reg >= 0 && eq) {
                     vm.regs[reg] = atof(eq + 1);
                     printf("Set R%s = %g\n", mk56_reg_name(reg), vm.regs[reg]);

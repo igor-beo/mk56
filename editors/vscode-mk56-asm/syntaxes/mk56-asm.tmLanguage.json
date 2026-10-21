@@ -113,19 +113,19 @@
       "patterns": [
         {
           "name": "keyword.control.flow.mk56asm",
-          "match": "(К\\s?)?(БП|ПП|В/[ОO0]|С/П|C/П)|К\\s?НОП|F\\s?L[0-3]|F\\s?x(≠|!=|≥|>=|<|=)0|Кx(≠|≥|<|=)0"
+          "match": "([КK]\\s?)?(БП|ПП|В/[ОO0]|С/П|C/П)|[КK]\\s?НОП|F\\s?L[0-3]|F\\s?x(≠|!=|≥|>=|<|=)0|Кx(≠|≥|<|=)0"
         },
         {
           "name": "keyword.control.memory.mk56asm",
-          "match": "К?(ИП|П)(?=\\s?[0-9a-dа-д]\\b)|x→П|П→x"
+          "match": "[КK]?(ИП|П)(?=\\s?[0-9a-dавсдАВСД]\\b)|x→П|П→x"
         },
         {
           "name": "keyword.operator.function.mk56asm",
-          "match": "F\\s?(10ˣ|eˣ|lg|ln|sin⁻¹|cos⁻¹|tg⁻¹|sin|cos|tg|π|√|x²|1/x|xʸ|⟳|Bx|,)"
+          "match": "F\\s?(10ˣ|eˣ|lg|ln|sin⁻¹|cos⁻¹|tg⁻¹|sin|cos|tg|π|√|x\\^2|x²|1/x|xʸ|⟳|Bx|,)|\\bx²"
         },
         {
           "name": "keyword.operator.mk56asm",
-          "match": "В↑|↑|↔|ВП|Cx|Сx|/-/|/−/|[+−×÷]"
+          "match": "В↑|↑|↔|\\bXY\\b|ВП|Cx|Сx|/-/|/−/|[+−×÷]"
         }
       ]
     }

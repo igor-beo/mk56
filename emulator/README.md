@@ -30,7 +30,9 @@ Display: 120,
 
 ```
 $ ./mk56emu ../asm/examples/sinh.asm -d
+...
 ADDR  CODES  KEYS          MK56-ASM
+----  -----  ------------  -----------
 00    16     Feˣ           EXP
 01    0E     В↑            ENTER
 02    23     F1/x          INV
@@ -70,11 +72,25 @@ From the manual (page numbers in [`mk56emu.c`](mk56emu.c)):
   underflow
 
 The manual does not cover the following, so the emulator follows the Б3-34
-family:
+family or makes a stated choice:
 - the `F⟳` code (`25`)
-- `В/О` with an empty return stack, which goes to 01
+- `В/О` with an empty return stack, which goes to 01; a sixth nested `ПП`
+  drops the oldest return address
 - indirect operations using only the integer part of a register
-- stopping on an error inside a program
+- stopping on an error inside a program; `С/П` then continues with the
+  stack intact. An overflow leaves the stack as it was before the
+  operation, as `÷ 0` does; an underflow leaves 0 in X
+- a keyed number outside the range (`50 ВП 99`) gives ЕГГОГ when entry ends
+- a leading `0` counts as one of the 8 mantissa digits, also when entry
+  starts with `,`
+- `ВП` after a result starts a new number (1·10ⁿ); `/-/` in the middle of
+  the mantissa lets entry continue (`5 /-/ 7` gives −57)
+- `FL0`–`FL3` keep counting below −99999999, and a loop that starts at a
+  fraction or a negative number never ends
+
+Not emulated: registers changed by an indirect operation show leading zeros
+on the real display (`00000013,`); the emulator shows `13,`. The display
+while a number is being keyed is not modelled digit by digit.
 
 Transcendental functions use IEEE double and are then truncated. Their last
 digit or two can differ from the real chip. A program that never stops is

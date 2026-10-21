@@ -26,6 +26,7 @@ notation, and anything else is MK56-ASM. See the
 
 ```
 ADDR  CODES             KEYS                      SOURCE
+==============================================================================
 00    16                Feˣ                       EXP             ; e^x
 01    0E                В↑                        ENTER           ; duplicate: Y=e^x, X=e^x
 02    23                F1/x                      INV             ; X = 1/e^x

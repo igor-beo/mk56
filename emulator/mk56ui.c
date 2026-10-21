@@ -34,8 +34,8 @@
 #define COL_HIGHLIGHT   13  // Highlighted line (white on blue)
 #define COL_ERROR       14  // Error text (white on red)
 #define COL_SHADOW      15  // Shadow (black on black)
-#define COL_DISPLAY     16  // LED display (green on black)
-#define COL_DISPLAY_DIM 17  // Dim LED segments
+#define COL_DISPLAY     16  // VFD display (green on black)
+#define COL_DISPLAY_DIM 17  // Dim display segments
 // Syntax highlighting colors
 #define COL_SYN_ADDR    18  // Address (cyan)
 #define COL_SYN_OPCODE  19  // Opcode/instruction (yellow)
@@ -66,7 +66,7 @@ typedef struct {
     
     WINDOW *win_desktop;    // Blue desktop background
     WINDOW *win_menu;       // Top menu bar
-    WINDOW *win_display;    // LED display (result)
+    WINDOW *win_display;    // Vacuum-fluorescent display (X)
     WINDOW *win_stack;      // Stack window
     WINDOW *win_regs;       // Registers window
     WINDOW *win_prog;       // Program window
@@ -125,7 +125,7 @@ static void init_colors(void) {
     init_pair(COL_HIGHLIGHT,   COLOR_YELLOW, COLOR_BLUE);   // Yellow highlight
     init_pair(COL_ERROR,       COLOR_WHITE,  COLOR_RED);
     init_pair(COL_SHADOW,      COLOR_BLACK,  COLOR_BLACK);
-    init_pair(COL_DISPLAY,     COLOR_GREEN,  COLOR_BLACK);  // Green LED on black
+    init_pair(COL_DISPLAY,     COLOR_GREEN,  COLOR_BLACK);  // Green VFD on black
     init_pair(COL_DISPLAY_DIM, COLOR_BLACK,  COLOR_BLACK);
     // Syntax highlighting
     init_pair(COL_SYN_ADDR,    COLOR_CYAN,   COLOR_BLUE);   // Address
@@ -314,7 +314,7 @@ static void draw_display(void) {
     int h, w;
     getmaxyx(ui.win_display, h, w);
     
-    // Black background for LED display
+    // Black background for the display
     wbkgd(ui.win_display, COLOR_PAIR(COL_DISPLAY));
     werase(ui.win_display);
     
@@ -974,7 +974,7 @@ static void handle_dialog_input(int ch) {
             }
             
             case MODE_DIALOG_INPUT_REGVAL:
-                if (ui.input_buf[0]) {
+                if (ui.input_buf[0] && vm_value_ok(atof(ui.input_buf))) {
                     ui.vm->regs[ui.edit_reg] = atof(ui.input_buf);
                 }
                 close_dialog();
@@ -989,7 +989,9 @@ static void handle_dialog_input(int ch) {
     
     // Accept input characters
     bool accept = false;
-    if (ui.mode == MODE_DIALOG_INPUT_REG) {
+    if (ch < 0 || ch > 255) {
+        accept = false;
+    } else if (ui.mode == MODE_DIALOG_INPUT_REG) {
         accept = isdigit(ch) || (toupper(ch) >= 'A' && toupper(ch) <= 'D');
     } else {
         accept = isdigit(ch) || ch == '.' || ch == '-' || 
@@ -1246,7 +1248,7 @@ static void handle_key(int ch) {
             show_file_menu();
             break;
             
-        // Alt-X = Quit (ESC handled separately for edit mode)
+        // Q = Quit (ESC is handled separately in edit mode)
         case 'q':
         case 'Q':
             endwin();

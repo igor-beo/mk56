@@ -5,12 +5,12 @@ Assembly language for the МК-56, and the original listing notation.
 | File | Description |
 |------|-------------|
 | [MK56-ASM-SPEC.md](MK56-ASM-SPEC.md) | Language specification: syntax, listing notation, test directives |
-| [INSTRUCTION-SET.md](INSTRUCTION-SET.md) | Every machine code, generated from the shared opcode table |
+| [INSTRUCTION-SET.md](INSTRUCTION-SET.md) | Every machine code, from the shared opcode table |
 | [examples/](examples/) | Example programs with tests |
 
 ## The same program, two ways
 
-MK56-ASM (`factorial.asm`):
+A factorial loop in MK56-ASM:
 
 ```asm
 ; @input 5
@@ -27,7 +27,7 @@ loop:   RCL R1
         HALT
 ```
 
-Original listing (`factorial.mk56`):
+The same program in the original listing notation:
 
 ```
 ; @input 5

@@ -38,9 +38,6 @@ build/
 *.temp
 *.log
 
-# BMAD workflow artifacts (keep for development)
-# .bmad/
-
 # Local configuration
 .env
 .env.local
