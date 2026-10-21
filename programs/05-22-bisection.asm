@@ -1,0 +1,74 @@
+; Program 5.22: Root of F(x) = 0 by halving the interval (bisection)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.92 (book61.pdf page 93)
+; The book's listing is a template: steps 00-15, then code computing F(x) from x = Ra
+; ("..."), then ИПС XY ПС × Fx<0 00 ИПВ /−/ БП 01.
+; The step h = Rb is halved each pass and a = Ra moves by h; when F changes sign
+; (product with the previous F in Rc is negative) the direction reverses.
+; Stops when (h/x)² < eps².
+; Input: a in Ra, b − a in Rb, Rc = any number with the sign of F(a), eps² in Rd;
+; В/О, С/П. Output: root in X (and Ra).
+; Steps 02 and 08 are printed with the "+"-like glyph; both are ÷ (h/2, then h/x for
+; the relative test).
+; This instance uses the book's check example (diode voltage):
+;   F(U) = E − U − R·I0·(e^(νU) − 1), E = R1 = 0,5, R·I0 = R2 = 1e-3, ν = R3 = 20,
+;   F code "ИПА ИП3 × Fe^x 1 − ИП2 × ИПА + ИП1 XY −".
+;
+; Book example: a = 0, b = 0,5, n = F(0) = 0,5, eps² = 1e-6 -> U = 0,27172852 (about 2 min)
+; @reg R1=0.5 R2=1e-3 R3=20 Ra=0 Rb=0.5 Rc=0.5 Rd=1e-6
+; @run
+; @expect X=0.27172852
+; @reset
+; Book example: same, eps² = 1e-14 -> U = 0,27174234 (about 4 min)
+; @reg R1=0.5 R2=1e-3 R3=20 Ra=0 Rb=0.5 Rc=0.5 Rd=1e-14
+; @run
+; @expect X=0.27174234
+;
+; As printed:
+;   00: ИПb 2 ÷ Пb В↑ ИПa + Пa ÷ Fx²
+;   10: ИПd − Fx<0 16 ИПa С/П ИПa ИП3 × Fe^x
+;   20: 1 − ИП2 × ИПa + ИП1 ↔ − ИПc
+;   30: ↔ Пc × Fx<0 00 ИПb /-/ БП 01
+;
+; Each line: instruction ; address, keys, codes
+
+L00:
+        RCL RB          ; 00  ИПb            6B
+
+L01:
+        2               ; 01  2              02
+        DIV             ; 02  ÷              13
+        STO RB          ; 03  Пb             4B
+        ENTER           ; 04  В↑             0E
+        RCL RA          ; 05  ИПa            6A
+        ADD             ; 06  +              10
+        STO RA          ; 07  Пa             4A
+        DIV             ; 08  ÷              13
+        SQ              ; 09  Fx²            22
+        RCL RD          ; 10  ИПd            6D
+        SUB             ; 11  −              11
+        JGE L16         ; 12  Fx<0 16        5C 16
+        RCL RA          ; 14  ИПa            6A
+        HALT            ; 15  С/П            50
+
+L16:
+        RCL RA          ; 16  ИПa            6A
+        RCL R3          ; 17  ИП3            63
+        MUL             ; 18  ×              12
+        EXP             ; 19  Feˣ            16
+        1               ; 20  1              01
+        SUB             ; 21  −              11
+        RCL R2          ; 22  ИП2            62
+        MUL             ; 23  ×              12
+        RCL RA          ; 24  ИПa            6A
+        ADD             ; 25  +              10
+        RCL R1          ; 26  ИП1            61
+        SWAP            ; 27  ↔              14
+        SUB             ; 28  −              11
+        RCL RC          ; 29  ИПc            6C
+        SWAP            ; 30  ↔              14
+        STO RC          ; 31  Пc             4C
+        MUL             ; 32  ×              12
+        JGE L00         ; 33  Fx<0 00        5C 00
+        RCL RB          ; 35  ИПb            6B
+        CHS             ; 36  /-/            0B
+        JMP L01         ; 37  БП 01          51 01

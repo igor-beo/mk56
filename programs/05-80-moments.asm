@@ -1,0 +1,148 @@
+; Program 5.80: Initial and central moments, mean, variance, asymmetry and excess
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.135 (book61.pdf page 136)
+; m_k = (1/N) sum x^k; M2 = m2 − m1², M3 = m3 − 3m1m2 + 2m1³,
+; M4 = m4 − 4m1m3 + 6m1²m2 − 3m1⁴; D = M2, A = M3/M2^(3/2), E = M4/M2² − 3.
+; Input: N in R0 and Ra, R1..R6 cleared. В/О С/П shows 0, then key each x_i and С/П.
+; Output: after the last x_i: mean in X; С/П: D; С/П: A; С/П: E.
+; m1..m4 stay in R1..R4, M2, M3, M4 in Rb, Rc, Rd.
+;
+; Book example: N = 10, x = 9, 8, 10, 9, 11, 12, 10, 10, 9, 11
+;   -> mean 9,9, D = 1,29, A = 0,19656579, E = −0,752539
+; E comes from M4 = m4 − 4m1m3 + 6m1²m2 − 3m1⁴, where terms near 10^4 cancel to 3,74,
+; so it carries only ~3 good digits. The exact E of the data is −0,7539210; this emulator
+; (8-digit truncation) gives −0,7537408, the book prints −0,752539; the gap is
+; last-digit rounding in steps 62-81. Checked with tol=3e-3 for that reason.
+; (The book also forms D0 = D·N/(N−1) = 1,4333333 by hand between D and A.)
+; @reg R0=10 Ra=10
+; @run
+; @expect X=0
+; @input 9
+; @input 8
+; @input 10
+; @input 9
+; @input 11
+; @input 12
+; @input 10
+; @input 10
+; @input 9
+; @input 11
+; @expect X=9.9
+; @run
+; @expect X=1.29
+; @run
+; @expect X=0.19656579
+; @run
+; @expect X=-0.752539 tol=3e-3
+;
+; As printed:
+;   00: ИП6 С/П П6 ИП1 + П1 ИП6 Fx² ИП2 +
+;   10: П2 ИП6 Fx² ИП6 × ИП3 + П3 ИП6 Fx²
+;   20: Fx² ИП4 + П4 FL0 00 ИП1 ИПa ÷ П1
+;   30: С/П ИП2 ИПa ÷ П2 ИП3 ИПa ÷ П3 ИП4
+;   40: ИПa ÷ П4 ИП2 ИП1 Fx² − Пb С/П ИП1
+;   50: Fx² 2 × ИП2 3 × − ИП1 × ИП3
+;   60: + Пc ИП2 2 × ИП1 Fx² − ИП1 ×
+;   70: 3 × 4 ÷ ИП3 − ИП1 × 4 ×
+;   80: ИП4 + Пd ИПc ИПb В↑ Fx² × F√ ÷
+;   90: С/П ИПd ИПb Fx² ÷ 3 − С/П
+;
+; Each line: instruction ; address, keys, codes
+
+L00:
+        RCL R6          ; 00  ИП6            66
+        HALT            ; 01  С/П            50
+        STO R6          ; 02  П6             46
+        RCL R1          ; 03  ИП1            61
+        ADD             ; 04  +              10
+        STO R1          ; 05  П1             41
+        RCL R6          ; 06  ИП6            66
+        SQ              ; 07  Fx²            22
+        RCL R2          ; 08  ИП2            62
+        ADD             ; 09  +              10
+        STO R2          ; 10  П2             42
+        RCL R6          ; 11  ИП6            66
+        SQ              ; 12  Fx²            22
+        RCL R6          ; 13  ИП6            66
+        MUL             ; 14  ×              12
+        RCL R3          ; 15  ИП3            63
+        ADD             ; 16  +              10
+        STO R3          ; 17  П3             43
+        RCL R6          ; 18  ИП6            66
+        SQ              ; 19  Fx²            22
+        SQ              ; 20  Fx²            22
+        RCL R4          ; 21  ИП4            64
+        ADD             ; 22  +              10
+        STO R4          ; 23  П4             44
+        LOOP0 L00       ; 24  FL0 00         5D 00
+        RCL R1          ; 26  ИП1            61
+        RCL RA          ; 27  ИПa            6A
+        DIV             ; 28  ÷              13
+        STO R1          ; 29  П1             41
+        HALT            ; 30  С/П            50
+        RCL R2          ; 31  ИП2            62
+        RCL RA          ; 32  ИПa            6A
+        DIV             ; 33  ÷              13
+        STO R2          ; 34  П2             42
+        RCL R3          ; 35  ИП3            63
+        RCL RA          ; 36  ИПa            6A
+        DIV             ; 37  ÷              13
+        STO R3          ; 38  П3             43
+        RCL R4          ; 39  ИП4            64
+        RCL RA          ; 40  ИПa            6A
+        DIV             ; 41  ÷              13
+        STO R4          ; 42  П4             44
+        RCL R2          ; 43  ИП2            62
+        RCL R1          ; 44  ИП1            61
+        SQ              ; 45  Fx²            22
+        SUB             ; 46  −              11
+        STO RB          ; 47  Пb             4B
+        HALT            ; 48  С/П            50
+        RCL R1          ; 49  ИП1            61
+        SQ              ; 50  Fx²            22
+        2               ; 51  2              02
+        MUL             ; 52  ×              12
+        RCL R2          ; 53  ИП2            62
+        3               ; 54  3              03
+        MUL             ; 55  ×              12
+        SUB             ; 56  −              11
+        RCL R1          ; 57  ИП1            61
+        MUL             ; 58  ×              12
+        RCL R3          ; 59  ИП3            63
+        ADD             ; 60  +              10
+        STO RC          ; 61  Пc             4C
+        RCL R2          ; 62  ИП2            62
+        2               ; 63  2              02
+        MUL             ; 64  ×              12
+        RCL R1          ; 65  ИП1            61
+        SQ              ; 66  Fx²            22
+        SUB             ; 67  −              11
+        RCL R1          ; 68  ИП1            61
+        MUL             ; 69  ×              12
+        3               ; 70  3              03
+        MUL             ; 71  ×              12
+        4               ; 72  4              04
+        DIV             ; 73  ÷              13
+        RCL R3          ; 74  ИП3            63
+        SUB             ; 75  −              11
+        RCL R1          ; 76  ИП1            61
+        MUL             ; 77  ×              12
+        4               ; 78  4              04
+        MUL             ; 79  ×              12
+        RCL R4          ; 80  ИП4            64
+        ADD             ; 81  +              10
+        STO RD          ; 82  Пd             4D
+        RCL RC          ; 83  ИПc            6C
+        RCL RB          ; 84  ИПb            6B
+        ENTER           ; 85  В↑             0E
+        SQ              ; 86  Fx²            22
+        MUL             ; 87  ×              12
+        SQRT            ; 88  F√             21
+        DIV             ; 89  ÷              13
+        HALT            ; 90  С/П            50
+        RCL RD          ; 91  ИПd            6D
+        RCL RB          ; 92  ИПb            6B
+        SQ              ; 93  Fx²            22
+        DIV             ; 94  ÷              13
+        3               ; 95  3              03
+        SUB             ; 96  −              11
+        HALT            ; 97  С/П            50

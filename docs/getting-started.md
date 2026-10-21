@@ -75,8 +75,9 @@ time, convert it to MK56-ASM:
 
 Each line is one step: the instruction, then its address, the keys to press
 and the code the calculator shows in programming mode. Jump targets get
-labels (`L12:`, `sub42:`). The [program library](../programs/README.md)
-comes in both forms.
+labels (`L12:`, `sub42:`). The original listing is kept in the header under
+`; As printed:`, and `make test` checks that it still matches the code. The
+[program library](../programs/README.md) is written this way.
 
 ## The TUI
 

@@ -14,6 +14,9 @@
  *   ; @reset                   clear stack and registers, PC = 00
  *   ; @xfail reason            known failure: reported, does not fail the run
  *
+ * A comment block "; As printed:" followed by "; NN: keys..." lines (as
+ * written by mk56asm -s) must assemble to the same steps as the program.
+ *
  * *.mk56 files are original listings, anything else MK56-ASM.
  * Usage: mk56test [-v] file...   Exit status 1 if any check fails.
  */
@@ -57,7 +60,7 @@ static double *target(MK56VM *vm, const char *name) {
     return NULL;
 }
 
-typedef struct { int checks, failures; bool xfail; } Result;
+typedef struct { int checks, failures; bool xfail, broken; } Result;
 
 static void fail(Result *res, const char *path, int line, const char *msg) {
     res->failures++;
@@ -125,8 +128,46 @@ static void run_directive(MK56VM *vm, char *d, const char *path, int line, Resul
     }
 }
 
+/* The "; As printed:" block, if any, must give the same program. */
+static void check_as_printed(const char *src, const uint8_t *bin, size_t size,
+                             const char *path, Result *res) {
+    const char *p = strstr(src, "; As printed:");
+    if (!p) return;
+    static char listing[8192];
+    size_t off = 0;
+    for (p = strchr(p, '\n'); p && p[1] == ';'; p = strchr(p + 1, '\n')) {
+        const char *t = p + 2;
+        while (*t == ' ' || *t == '\t') t++;
+        if (!isdigit((unsigned char)t[0]) || !isdigit((unsigned char)t[1]) || t[2] != ':') break;
+        const char *eol = strchr(t, '\n');
+        size_t len = eol ? (size_t)(eol - t) : strlen(t);
+        if (off + len + 2 >= sizeof listing) break;
+        memcpy(listing + off, t, len);
+        off += len;
+        listing[off++] = '\n';
+    }
+    listing[off] = '\0';
+
+    Assembler *as = malloc(sizeof *as);
+    res->checks++;
+    if (!as) return;
+    const char *why = NULL;
+    size_t n;
+    if (!asm_assemble_ex(as, listing, true)) why = asm_get_error(as);
+    else {
+        const uint8_t *b = asm_get_binary(as, &n);
+        if (n != size || memcmp(b, bin, n) != 0) why = "differs from the program";
+    }
+    if (why) {
+        printf("  FAIL %s: \"As printed\" listing %s\n", path, why);
+        res->failures++;
+        res->broken = true;
+    }
+    free(as);
+}
+
 static Result test_file(const char *path) {
-    Result res = { 0, 0, false };
+    Result res = { 0, 0, false, false };
     char *src = read_file(path);
     if (src && strstr(src, "@xfail")) res.xfail = true;
     if (!src) { printf("  FAIL %s: cannot read\n", path); res.failures = 1; return res; }
@@ -146,6 +187,7 @@ static Result test_file(const char *path) {
     size_t size;
     const uint8_t *bin = asm_get_binary(as, &size);
     vm_load(&vm, bin, size);
+    check_as_printed(src, bin, size, path, &res);
 
     int line = 1;
     for (char *p = src; *p; line++) {
@@ -171,7 +213,7 @@ int main(int argc, char **argv) {
         Result r = test_file(argv[i]);
         files++;
         checks += r.checks;
-        if (r.failures && r.xfail) xfails++;
+        if (r.failures && r.xfail && !r.broken) xfails++;
         else if (r.failures) failed_files++;
         else if (r.xfail) printf("  XPASS %s: remove @xfail\n", argv[i]);
     }

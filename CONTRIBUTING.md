@@ -33,7 +33,12 @@ Thank you for your interest in contributing!
 - Include header comments describing purpose, input, output and source
   (book and page)
 - Add `; @input` / `; @expect` lines so `make test` runs the program
-- In `.mk56` listings, start each line with its `NN:` address
+- To add a program from a book or magazine, type the listing as printed
+  into a `.mk56` file with an `NN:` address at the start of each line, add
+  the header and tests, then convert it with
+  `./assembler/mk56asm file.mk56 -s programs/NN-MM-name.asm`. The library
+  keeps only the `.asm`; the printed listing goes into it under
+  `; As printed:`
 
 ### Testing
 

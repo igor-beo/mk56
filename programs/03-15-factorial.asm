@@ -1,0 +1,21 @@
+; Program 3.15: Factorial n! = 1*2*3*...*n for n >= 1 (0! = 1 is excluded)
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.61 (book61.pdf page 62)
+; Input: n in X.  Output: n! in X.
+;
+; Book example: 10! = 3628800
+; @input 10
+; @expect X=3628800
+;
+; As printed:
+;   00: П0 1 ИП0 × FL0 02 С/П
+;
+; Each line: instruction ; address, keys, codes
+
+        STO R0          ; 00  П0             40
+        1               ; 01  1              01
+
+L02:
+        RCL R0          ; 02  ИП0            60
+        MUL             ; 03  ×              12
+        LOOP0 L02       ; 04  FL0 02         5D 02
+        HALT            ; 06  С/П            50

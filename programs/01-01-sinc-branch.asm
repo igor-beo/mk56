@@ -1,0 +1,37 @@
+; Chapter 1 example (unnumbered): y = sin(pi n f t)/(pi n f t), with y = 1 for t = 0
+; Source: Дьяконов, «Справочник по расчётам на микрокалькуляторах», 1985, p.24 (book61.pdf page 25)
+; Input: n in R8, f in R9, t in X.  Output: y in X.  Angle mode: radians.
+; Fx=0 04: for t = 0 the condition holds, the address is skipped and 1 is shown;
+; for t != 0 it fails and the program jumps to 04. The book says to press В/О and
+; С/П for every new t.
+;
+; Book example (p.23): n = 2, f = 1000, t = 1,2*10^-4 -> y = 9,0790883*10^-1
+; @angle rad
+; @reg R8=2 R9=1000
+; @input 1.2e-4
+; @expect X=0.90790883 tol=1e-5
+; @start 00
+; @input 0
+; @expect X=1
+;
+; As printed:
+;   00: Fx=0 04 1 С/П Fπ ИП8 ИП9 × × ×
+;   10: Fsin FBx ÷ С/П
+;
+; Each line: instruction ; address, keys, codes
+
+        JNZ L04         ; 00  Fx=0 04        5E 04
+        1               ; 02  1              01
+        HALT            ; 03  С/П            50
+
+L04:
+        PI              ; 04  Fπ             20
+        RCL R8          ; 05  ИП8            68
+        RCL R9          ; 06  ИП9            69
+        MUL             ; 07  ×              12
+        MUL             ; 08  ×              12
+        MUL             ; 09  ×              12
+        SIN             ; 10  Fsin           1C
+        LASTX           ; 11  FBx            0F
+        DIV             ; 12  ÷              13
+        HALT            ; 13  С/П            50
